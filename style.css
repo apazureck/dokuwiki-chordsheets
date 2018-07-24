@@ -1,0 +1,36 @@
+.song-with-chords {
+    background-color: transparent;
+    font-family: 'Courier New', Courier, monospace;
+    background: rgb(224, 236, 240);
+    padding: 1rem;
+}
+
+.song-chord {
+    color: #d73a49;
+}
+
+.song-chordLine {
+    white-space: pre;
+    margin-bottom: 0;
+}
+
+.song-textLine {
+    white-space: pre;
+    margin-top: 0;
+}
+
+.song-has-fluffy-chords .song-chord {
+    padding: 2px 4px;
+    margin-left: -4px;
+    margin-right: -4px;
+    background-color: #f6f8fa;
+    border-radius: 3px;
+}
+
+.song-section {
+    font-weight: bold;
+}
+
+.song-section.chorus {
+    background: wheat;
+}
