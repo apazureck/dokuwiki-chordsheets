@@ -33,7 +33,7 @@ function parseSong(song, transpose) {
         }
         findChords(lines, transpose);
 
-        coloredSong = lines.join("\n");
+        coloredSong += lines.join("\n");
     };
 
     function findChords(lines, transpose) {
@@ -71,7 +71,7 @@ function parseSong(song, transpose) {
                 var subchords = chordMatch[2].split("/");
 
                 for (var i2 = 0; i2 < subchords.length; i2++) {
-                    var chordRootRegEx = new RegExp("([a-g]{1}[b#]?)(.*)","i");
+                    var chordRootRegEx = new RegExp("([a-g]{1}[b#]?)(.*)", "i");
                     var chordRootMatch = chordRootRegEx.exec(subchords[i2]);
                     var transposed = substChord(chordRootMatch[1], transpose);
                     subchords[i2] = transposed + chordRootMatch[2] || "";
@@ -79,7 +79,7 @@ function parseSong(song, transpose) {
                 var newChord = subchords.join("/");
                 newLine += chordMatch[0].replace(chordMatch[2], '<span class="' + songChordSelector + '">' + newChord + '</span>');
             }
-            lineText = '<p class="' + chordLineSelector + '">' + newLine + '</p>';
+            lineText = '<p style="white-space: pre;color: #d73a49;font-family: \'Courier New\', Courier, monospace;margin:0;" class="' + chordLineSelector + '">' + newLine + '</p>';
         }
         else if (sectionRegex.test(lineText)) {
             var match = sectionRegex.exec(lineText);
@@ -93,7 +93,7 @@ function parseSong(song, transpose) {
             lineText = sectionText;
             isSection = true;
         } else {
-            lineText = '<p class="' + songTextLineSelector + '">' + lineText + '</p>';
+            lineText = '<p style="white-space: pre;font-family: \'Courier New\', Courier, monospace;margin:0;" class="' + songTextLineSelector + '">' + lineText + '</p>';
         }
 
         return {
@@ -137,5 +137,25 @@ function runSongHighlighter() {
         parseSong(songs[i], transpose);
     }
 };
+
+function cSheetExportToWord(id) {
+    var song = document.getElementById(id);
+    var range = document.createRange();
+    range.selectNode(song);
+    window.getSelection().addRange(range);
+
+    try {
+        // Now that we've selected the anchor text, execute the copy command  
+        var successful = document.execCommand('copy');
+        var msg = successful ? 'successfully' : 'unsuccessfully';
+        alert(msg + " copied song to clipboard. Use CTRL + V to paste it in your word document.");
+    } catch (err) {
+        alert('Oops, unable to copy');
+    }
+
+    // Remove the selections - NOTE: Should use
+    // removeRange(range) when it is supported  
+    window.getSelection().removeAllRanges();
+}
 
 document.addEventListener("DOMContentLoaded", ready);

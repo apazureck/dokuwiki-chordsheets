@@ -19,7 +19,6 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
     public function connectTo($mode) { $this->Lexer->addEntryPattern('<chordSheet.*?>(?=.*?</chordSheet>)',$mode,'plugin_chordsheets'); }
     public function postConnect() { $this->Lexer->addExitPattern('</chordSheet>','plugin_chordsheets'); }
  
- 
     /**
      * Handle the match
      */
@@ -51,11 +50,10 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
             switch ($state) {
                 case DOKU_LEXER_ENTER :      
                     list($transpose) = $match;
-                    // $renderer->doc .= "<div style='$color $background'>"; 
-                    // break;
                     $id = mt_rand();
+                    $renderer->doc .= '<div class="cSheetButtonBar"><span class=cSheetButtons><button onclick="cSheetExportToWord('.$id.')">Export to Word</button></span></div>';
                     $renderer->doc .= '<div class="song-with-chords" id="'.$id.'" data-transpose="'.$transpose.'">';
-                    // $renderer->doc .= 'Filter: <form class="searchtable" onsubmit="return false;"><input class="searchtable" name="filtertable" onkeyup="searchtable.filterall(this, \''.$id.'\')" type="text"></form>';
+                    // $renderer->doc .= 'Filter: <form class="searchtable" onsubmit="return false;"><input class="searchtable" name="filtertable" b="searchtable.filterall(this, \''.$id.'\')" type="text"></form>';
  
                 case DOKU_LEXER_UNMATCHED :  
                     $renderer->doc .= $renderer->_xmlEntities($match); 

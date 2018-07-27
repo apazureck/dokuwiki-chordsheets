@@ -10,12 +10,10 @@
 }
 
 .song-chordLine {
-    white-space: pre;
     margin-bottom: 0;
 }
 
 .song-textLine {
-    white-space: pre;
     margin-top: 0;
 }
 
@@ -33,4 +31,13 @@
 
 .song-section.chorus {
     background: wheat;
+}
+
+.cSheetButtonBar {
+    text-align: right;
+}
+
+.cSheetButtons {
+    padding: 5px;
+    background: rgb(224, 236, 240);
 }
