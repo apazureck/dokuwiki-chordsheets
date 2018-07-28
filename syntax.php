@@ -16,7 +16,11 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
     public function getType(){ return 'formatting'; }
     public function getAllowedTypes() { return array('formatting', 'substition', 'disabled'); }   
     public function getSort(){ return 158; }
-    public function connectTo($mode) { $this->Lexer->addEntryPattern('<chordSheet.*?>(?=.*?</chordSheet>)',$mode,'plugin_chordsheets'); }
+    public function connectTo($mode) 
+    { 
+        $this->Lexer->addEntryPattern('<chordSheet.*?>(?=.*?</chordSheet>)',$mode,'plugin_chordsheets');
+        $this->Lexer->addSpecialPattern('%.*?\[\w+\]', $mode,'plugin_chordsheets');
+    }
     public function postConnect() { $this->Lexer->addExitPattern('</chordSheet>','plugin_chordsheets'); }
  
     /**
@@ -35,6 +39,7 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
  
           case DOKU_LEXER_UNMATCHED :  return array($state, $match);
           case DOKU_LEXER_EXIT :       return array($state, '');
+          case DOKU_LEXER_SPECIAL:     return array($state, $match);
         }
         return array();
     }
@@ -61,29 +66,12 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
                 case DOKU_LEXER_EXIT :       
                     $renderer->doc .= "</div>"; 
                     break;
+                case DOKU_LEXER_SPECIAL:
+                    $renderer->doc .= '<span class="jtab">'.$match.'</span>';
+                break;
             }
             return true;
         }
         return false;
     }
- 
-    /**
-     * Validate color value $c
-     * this is cut price validation - only to ensure the basic format is correct and there is nothing harmful
-     * three basic formats  "colorname", "#fff[fff]", "rgb(255[%],255[%],255[%])"
-     */
-    private function _isValid($c) {
-        $c = trim($c);
- 
-        $pattern = "/^\s*(
-            ([a-zA-z]+)|                                #colorname - not verified
-            (\#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}))|        #colorvalue
-            (rgb\(([0-9]{1,3}%?,){2}[0-9]{1,3}%?\))     #rgb triplet
-            )\s*$/x";
- 
-        if (preg_match($pattern, $c)) return trim($c);
- 
-        return "";
-    }
 }
-

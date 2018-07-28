@@ -1,36 +1,34 @@
 .song-with-chords {
     background-color: transparent;
     font-family: 'Courier New', Courier, monospace;
-    background: rgb(224, 236, 240);
+    background-color: #f6f8fa;
     padding: 1rem;
 }
 
 .song-chord {
     color: #d73a49;
+    cursor: help;
+}
+
+.song-chord:hover {
+    background: lightseagreen;
 }
 
 .song-chordLine {
-    margin-bottom: 0;
+    margin: 0;
 }
 
 .song-textLine {
-    margin-top: 0;
-}
-
-.song-has-fluffy-chords .song-chord {
-    padding: 2px 4px;
-    margin-left: -4px;
-    margin-right: -4px;
-    background-color: #f6f8fa;
-    border-radius: 3px;
+    margin: 0;
 }
 
 .song-section {
+    margin-top: 1rem;
     font-weight: bold;
 }
 
-.song-section.chorus {
-    background: wheat;
+.song-section.chorus, .song-section.refrain {
+    background: rgb(255, 241, 214);
 }
 
 .cSheetButtonBar {
@@ -39,5 +37,63 @@
 
 .cSheetButtons {
     padding: 5px;
-    background: rgb(224, 236, 240);
+    background-color: #f6f8fa;
+}
+
+.jtab {
+    height:118px;
+}
+
+.jtab.chordonly {
+    height:118px;
+}
+
+.jtab.tabonly {
+  height:100px;
+}
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black;
+}
+
+/* Tooltip text */
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: #fff;
+    color: #333;
+    text-align: center;
+    padding: 5px 0;
+    border-radius: 6px;
+
+    /* Position the tooltip text */
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+
+    /* Fade in tooltip */
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+/* Tooltip arrow */
+.tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #555 transparent transparent transparent;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: .9;
 }

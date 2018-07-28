@@ -1,3 +1,6 @@
+/* DOKUWIKI:include_once js/raphael.js */
+/* DOKUWIKI:include_once js/jtab.min.js */
+
 function ready() {
     "use strict";
     runSongHighlighter();
@@ -16,6 +19,7 @@ function parseSong(song, transpose) {
 
     var coloredSong = "";
     var currentSection = "";
+    var chordCount = 0;
 
     function run() {
         addClass(song, transpose);
@@ -34,7 +38,7 @@ function parseSong(song, transpose) {
         findChords(lines, transpose);
 
         coloredSong += lines.join("\n");
-    };
+    }
 
     function findChords(lines, transpose) {
         for (var i = 0; i < lines.length; i++) {
@@ -51,24 +55,40 @@ function parseSong(song, transpose) {
     };
 
     function parseLine(lineText, transpose) {
+        /* ignore empty lines, will be controlled by paragraphs */
+        if (isNullOrWhiteSpace(lineText)) {
+            return {
+                'isChord': false,
+                'isSection': false,
+                'text': ""
+            };
+        }
 
         var isChord = false;
         var isSection = false;
 
-        var chordRegEx = new RegExp("(\\s*)([a-g]{1}[b#]?(?:no|add|sus|dim|maj|min|m|13|11|9|7|6|5|4|3|2)*(?:\\s*\\/\\s*[a-g]{1}[b#]?)?)", "iy");
+        var chordRegEx = /(?:(\s*)([a-g]{1}[b#]?(?:no|add|sus|dim|maj|min|m|13|11|9|7|6|5|4|3|2)*(?:\s*\/\s*[a-g]{1}[b#]?)?)|\s*(\().*\))/iy;
 
         var sectionRegex = new RegExp("^\\s*(\\[(.+)\\])", "i");
 
         var chordRep = lineText.replace(new RegExp("[a-g]{1}[b#]?(no|add|sus|dim|maj|min|m|13|11|9|7|6|5|4|3|2)*", "gi"), "");
-        var hasText = new RegExp("[a-z]", "i");
-        if (hasText.test(chordRep) == false)
-            isChord = true;
+        var hasTextRegExp = new RegExp("[a-z](?![^\\(]*\\))", "i");
+        var isChord = hasTextRegExp.test(chordRep) == false;
 
         if (isChord) {
             var newLine = "";
             var chordMatch;
+
             while ((chordMatch = chordRegEx.exec(lineText)) != null) {
-                var subchords = chordMatch[2].split("/");
+                if (chordMatch[3] === "(") {
+                    newLine += '<span style="color:black;">' + chordMatch[0] + '</span>';
+                    continue;
+                }
+                try {
+                    var subchords = chordMatch[2].split("/");
+                } catch (error) {
+                    var i = 0;
+                }
 
                 for (var i2 = 0; i2 < subchords.length; i2++) {
                     var chordRootRegEx = new RegExp("([a-g]{1}[b#]?)(.*)", "i");
@@ -77,7 +97,7 @@ function parseSong(song, transpose) {
                     subchords[i2] = transposed + chordRootMatch[2] || "";
                 }
                 var newChord = subchords.join("/");
-                newLine += chordMatch[0].replace(chordMatch[2], '<span class="' + songChordSelector + '">' + newChord + '</span>');
+                newLine += chordMatch[0].replace(chordMatch[2], '<span class="' + songChordSelector + ' tooltip">' + newChord + '<span class="tooltiptext jtab">' + subchords[0] + '</span></span>');
             }
             lineText = '<p style="white-space: pre;color: #d73a49;font-family: \'Courier New\', Courier, monospace;margin:0;" class="' + chordLineSelector + '">' + newLine + '</p>';
         }
@@ -127,6 +147,10 @@ function parseSong(song, transpose) {
         return chord;
     }
 
+    function isNullOrWhiteSpace(str) {
+        return str == null || str.replace(/\s/g, '').length < 1;
+    }
+
     run();
 }
 
@@ -156,6 +180,14 @@ function cSheetExportToWord(id) {
     // Remove the selections - NOTE: Should use
     // removeRange(range) when it is supported  
     window.getSelection().removeAllRanges();
+}
+
+function showJTab(element) {
+    element.style.visibility = "visible";
+}
+
+function hideJTab(element) {
+    element.style.visibility = "hidden";
 }
 
 document.addEventListener("DOMContentLoaded", ready);
