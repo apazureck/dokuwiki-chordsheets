@@ -13,21 +13,13 @@ var songSectionHeadingSelector = "song-section-heading";
 var chordLineSelector = "song-chordLine";
 var songTextLineSelector = "song-textLine";
 
-function parseSong(song, transpose) {
+function parseSong(songText, transpose, showToolTips) {
     "use strict";
     transpose = transpose || 0;
 
-    var coloredSong = "";
     var currentSection = "";
-    var chordCount = 0;
 
-    function run() {
-        addClass(song, transpose);
-        displayColoredSong(coloredSong);
-    }
-
-    function addClass(song, transpose) {
-        var text = song.innerHTML;
+    function parseText(text, transpose, showToolTips) {
         var lines = text.split(/\n/g);
 
         try {
@@ -35,14 +27,13 @@ function parseSong(song, transpose) {
         } catch (error) {
             transpose = 0;
         }
-        findChords(lines, transpose);
-
-        coloredSong += lines.join("\n");
+        findChords(lines, transpose, showToolTips);
+        return lines.join("\n");
     }
 
-    function findChords(lines, transpose) {
+    function findChords(lines, transpose, showToolTips) {
         for (var i = 0; i < lines.length; i++) {
-            var ln = parseLine(lines[i], transpose);
+            var ln = parseLine(lines[i], transpose, showToolTips);
             lines[i] = ln.text;
         }
         if (currentSection != "") {
@@ -50,11 +41,8 @@ function parseSong(song, transpose) {
         }
     };
 
-    function displayColoredSong(coloredSong) {
-        song.innerHTML = coloredSong;
-    };
-
-    function parseLine(lineText, transpose) {
+    function parseLine(lineText, transpose, addTooltip) {
+        addTooltip = addTooltip || true;
         /* ignore empty lines, will be controlled by paragraphs */
         if (isNullOrWhiteSpace(lineText)) {
             return {
@@ -97,7 +85,10 @@ function parseSong(song, transpose) {
                     subchords[i2] = transposed + chordRootMatch[2] || "";
                 }
                 var newChord = subchords.join("/");
-                newLine += chordMatch[0].replace(chordMatch[2], '<span class="' + songChordSelector + ' tooltip">' + newChord + '<span class="tooltiptext jtab">' + subchords[0] + '</span></span>');
+                if (addTooltip)
+                    newLine += chordMatch[0].replace(chordMatch[2], '<span class="' + songChordSelector + ' tooltip">' + newChord + '<span class="tooltiptext jtab">' + subchords[0] + '</span></span>');
+                else
+                    newLine += chordMatch[0].replace(chordMatch[2], '<span class="' + songChordSelector + '">' + newChord + '</span>');
             }
             lineText = '<p style="white-space: pre;color: #d73a49;font-family: \'Courier New\', Courier, monospace;margin:0;" class="' + chordLineSelector + '">' + newLine + '</p>';
         }
@@ -151,43 +142,51 @@ function parseSong(song, transpose) {
         return str == null || str.replace(/\s/g, '').length < 1;
     }
 
-    run();
+    return parseText(songText, transpose, showToolTips);
 }
 
 function runSongHighlighter() {
     var songs = document.querySelectorAll('.' + songBlockSelector);
     for (var i = 0; i < songs.length; i++) {
         var transpose = songs[i].dataset.transpose;
-        parseSong(songs[i], transpose);
+        songs[i].rawText = songs[i].innerHTML;
+        songs[i].innerHTML = parseSong(songs[i].rawText, transpose);
     }
 };
 
 function cSheetExportToWord(id) {
     var song = document.getElementById(id);
-    var range = document.createRange();
-    range.selectNode(song);
-    window.getSelection().addRange(range);
 
-    try {
-        // Now that we've selected the anchor text, execute the copy command  
-        var successful = document.execCommand('copy');
-        var msg = successful ? 'successfully' : 'unsuccessfully';
-        alert(msg + " copied song to clipboard. Use CTRL + V to paste it in your word document.");
-    } catch (err) {
-        alert('Oops, unable to copy');
+    function copy() {
+        try {
+            // Now that we've selected the anchor text, execute the copy command  
+            var successful = document.execCommand('copy');
+            var msg = successful ? 'successfully' : 'unsuccessfully';
+            alert(msg + " copied song to clipboard. Use CTRL + V to paste it in your word document.");
+        } catch (err) {
+            alert('Oops, unable to copy');
+        }
+    }
+
+    if (song.rawText) {
+        var node = document.createElement("div");
+        node.innerHTML = parseSong(song.rawText, song.dataset.transpose, false);
+        song.appendChild(node);
+        var range = document.createRange();
+        range.selectNode(node);
+        window.getSelection().addRange(range);
+        copy();
+        song.removeChild(node);
+    } else {
+        var range = document.createRange();
+        range.selectNode(song);
+        window.getSelection().addRange(range);
+        copy();
     }
 
     // Remove the selections - NOTE: Should use
     // removeRange(range) when it is supported  
     window.getSelection().removeAllRanges();
-}
-
-function showJTab(element) {
-    element.style.visibility = "visible";
-}
-
-function hideJTab(element) {
-    element.style.visibility = "hidden";
 }
 
 document.addEventListener("DOMContentLoaded", ready);
