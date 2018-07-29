@@ -61,7 +61,6 @@
 /* Tooltip text */
 .tooltip .tooltiptext {
     visibility: hidden;
-    width: 120px;
     background-color: #fff;
     color: #333;
     text-align: center;
