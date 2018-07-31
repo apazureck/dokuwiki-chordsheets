@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.1.1] - 2018-08-01
+
+### Fixed
+
+* Chords do not get rendered when ajax request occurred (for example after editing a page)
+
 ## [0.1.0] - 2018-07-30
 
 ### Added
