@@ -4,6 +4,7 @@
 function ready() {
     "use strict";
     runSongHighlighter();
+    jtab.renderimplicit(null);
 }
 
 var songBlockSelector = "song-with-chords";
