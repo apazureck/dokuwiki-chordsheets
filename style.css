@@ -96,3 +96,8 @@
     visibility: visible;
     opacity: .9;
 }
+
+span.jtab svg {
+  width: auto;
+  height: auto;
+}
