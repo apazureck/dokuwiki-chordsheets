@@ -29,6 +29,7 @@
 
 .song-section.chorus, .song-section.refrain {
     background: rgb(255, 241, 214);
+    padding: 1rem 0;
 }
 
 .cSheetButtonBar {
