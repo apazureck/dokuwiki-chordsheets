@@ -6,11 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [0.1.2] - 2025-08-11
+## [0.1.3] - 2025-08-11
 
 ### Fixed
 
-* [#1](https://github.com/apazureck/dokuwiki-chordsheets/issues/1) - TypeError: htmlspecialchars (Credits: [@mperry2](https://github.com/mperry2))
+* [#4  - Chordsheets parse elements outside of chordsheet](https://github.com/apazureck/dokuwiki-chordsheets/issues/4) tags (Credits: [@mperry2](https://github.com/mperry2))
+* [#1  - TypeError: htmlspecialchars](https://github.com/apazureck/dokuwiki-chordsheets/issues/1) (Credits: [@mperry2](https://github.com/mperry2))
 
 ## [0.1.1] - 2018-08-01
 
