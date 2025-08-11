@@ -59,7 +59,7 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
                     $renderer->doc .= '<div class="cSheetButtonBar"><span class=cSheetButtons><button onclick="cSheetExportToWord('.$id.')">Export to Word</button></span></div>';
                     $renderer->doc .= '<div class="song-with-chords" id="'.$id.'" data-transpose="'.$transpose.'">';
                     // $renderer->doc .= 'Filter: <form class="searchtable" onsubmit="return false;"><input class="searchtable" name="filtertable" b="searchtable.filterall(this, \''.$id.'\')" type="text"></form>';
- 
+                    break;
                 case DOKU_LEXER_UNMATCHED :  
                     $renderer->doc .= $renderer->_xmlEntities($match); 
                     break;
