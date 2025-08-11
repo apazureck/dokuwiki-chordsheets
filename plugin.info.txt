@@ -1,7 +1,7 @@
 base   chordsheets
 author Andreas Pazureck
 email  andreas@pazureck.de
-date   2018-08-01
+date   2025-08-11
 name   chordsheets plugin
 desc   Pretty and interactive chord sheets like on ultimate guitar for dokuwiki
 url    https://github.com/apazureck/dokuwiki-chordsheets
