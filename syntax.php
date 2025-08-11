@@ -19,9 +19,12 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
     public function connectTo($mode) 
     { 
         $this->Lexer->addEntryPattern('<chordSheet.*?>(?=.*?</chordSheet>)',$mode,'plugin_chordsheets');
-        $this->Lexer->addSpecialPattern('%.*?\[\w+\]', $mode,'plugin_chordsheets');
     }
-    public function postConnect() { $this->Lexer->addExitPattern('</chordSheet>','plugin_chordsheets'); }
+    public function postConnect()
+    {
+        $this->Lexer->addExitPattern('</chordSheet>','plugin_chordsheets');
+        $this->Lexer->addPattern('%.*?\[\w+\]', $mode,'plugin_chordsheets');
+    }
  
     /**
      * Handle the match
@@ -39,7 +42,7 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
  
           case DOKU_LEXER_UNMATCHED :  return array($state, $match);
           case DOKU_LEXER_EXIT :       return array($state, '');
-          case DOKU_LEXER_SPECIAL:     return array($state, $match);
+          case DOKU_LEXER_MATCHED:     return array($state, $match);
         }
         return array();
     }
@@ -58,7 +61,6 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
                     $id = mt_rand();
                     $renderer->doc .= '<div class="cSheetButtonBar"><span class=cSheetButtons><button onclick="cSheetExportToWord('.$id.')">Export to Word</button></span></div>';
                     $renderer->doc .= '<div class="song-with-chords" id="'.$id.'" data-transpose="'.$transpose.'">';
-                    // $renderer->doc .= 'Filter: <form class="searchtable" onsubmit="return false;"><input class="searchtable" name="filtertable" b="searchtable.filterall(this, \''.$id.'\')" type="text"></form>';
                     break;
                 case DOKU_LEXER_UNMATCHED :  
                     $renderer->doc .= $renderer->_xmlEntities($match); 
@@ -66,9 +68,9 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
                 case DOKU_LEXER_EXIT :       
                     $renderer->doc .= "</div>"; 
                     break;
-                case DOKU_LEXER_SPECIAL:
+                case DOKU_LEXER_MATCHED:
                     $renderer->doc .= '<span class="jtab">'.$match.'</span>';
-                break;
+                    break;
             }
             return true;
         }
