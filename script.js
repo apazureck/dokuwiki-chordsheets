@@ -1,10 +1,12 @@
 /* DOKUWIKI:include_once js/raphael.js */
 /* DOKUWIKI:include_once js/jtab.min.js */
+/* DOKUWIKI:include_once js/ukulele-chords.js */
 
 function ready() {
     "use strict";
     runSongHighlighter();
     jtab.renderimplicit(null);
+    ukulele.renderimplicit(null);
 }
 
 var songBlockSelector = "song-with-chords";
@@ -14,9 +16,10 @@ var songSectionHeadingSelector = "song-section-heading";
 var chordLineSelector = "song-chordLine";
 var songTextLineSelector = "song-textLine";
 
-function parseSong(songText, transpose, showToolTips) {
+function parseSong(songText, transpose, showToolTips, instrument) {
     "use strict";
     transpose = transpose || 0;
+    instrument = instrument || "guitar";
 
     var currentSection = "";
 
@@ -64,6 +67,9 @@ function parseSong(songText, transpose, showToolTips) {
         var hasTextRegExp = new RegExp("[a-z](?![^\\(]*\\))", "i");
         var isChord = hasTextRegExp.test(chordRep) == false;
 
+        // tooltip class: jtab (guitar, rendered by jtab) or jtab-ukulele
+        var tooltipClass = (instrument === "ukulele") ? "jtab-ukulele" : "jtab";
+
         if (isChord) {
             var newLine = "";
             var chordMatch;
@@ -87,7 +93,7 @@ function parseSong(songText, transpose, showToolTips) {
                 }
                 var newChord = subchords.join("/");
                 if (addTooltip)
-                    newLine += chordMatch[0].replace(chordMatch[2], '<span class="' + songChordSelector + ' tooltip">' + newChord + '<span class="tooltiptext jtab">' + subchords[0] + '</span></span>');
+                    newLine += chordMatch[0].replace(chordMatch[2], '<span class="' + songChordSelector + ' tooltip">' + newChord + '<span class="tooltiptext ' + tooltipClass + '">' + subchords[0] + '</span></span>');
                 else
                     newLine += chordMatch[0].replace(chordMatch[2], '<span class="' + songChordSelector + '">' + newChord + '</span>');
             }
@@ -149,14 +155,16 @@ function parseSong(songText, transpose, showToolTips) {
 function runSongHighlighter() {
     var songs = document.querySelectorAll('.' + songBlockSelector);
     for (var i = 0; i < songs.length; i++) {
-        var transpose = songs[i].dataset.transpose;
+        var transpose  = songs[i].dataset.transpose;
+        var instrument = songs[i].dataset.instrument || "guitar";
         songs[i].rawText = songs[i].innerHTML;
-        songs[i].innerHTML = parseSong(songs[i].rawText, transpose);
+        songs[i].innerHTML = parseSong(songs[i].rawText, transpose, undefined, instrument);
     }
 };
 
 function cSheetExportToWord(id) {
     var song = document.getElementById(id);
+    var instrument = (song && song.dataset.instrument) || "guitar";
 
     function copy() {
         try {
@@ -171,7 +179,7 @@ function cSheetExportToWord(id) {
 
     if (song.rawText) {
         var node = document.createElement("div");
-        node.innerHTML = parseSong(song.rawText, song.dataset.transpose, false);
+        node.innerHTML = parseSong(song.rawText, song.dataset.transpose, false, instrument);
         song.appendChild(node);
         var range = document.createRange();
         range.selectNode(node);
