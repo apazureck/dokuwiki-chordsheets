@@ -6,9 +6,10 @@ $workflow = Get-Content -Raw -LiteralPath (Join-Path $repositoryRoot '.github\wo
 $runner = Get-Content -Raw -LiteralPath (Join-Path $repositoryRoot 'deployment\web-deploy.php')
 
 foreach ($requiredWorkflowPattern in @(
-    'ftp_upload "\$release_archive" "/\$archive_name"',
-    'ftp_upload "\$runner_source" "/\$runner_name"',
-    'ftp_upload "\$token_file" "/\$token_name"',
+    'ftp_upload "\$release_archive" "\$\(ftp_path "\$archive_name"\)"',
+    'ftp_upload "\$runner_source" "\$\(ftp_path "\$runner_name"\)"',
+    'ftp_upload "\$token_file" "\$\(ftp_path "\$token_name"\)"',
+    'printf ''%s/%s'' "\$ftp_web_root" "\$name"',
     'token_name="\.deploy-token-\$nonce\.php"',
     'runner_name="deploy-\$nonce\.php"',
     '<\?php exit; __halt_compiler\(\);'
@@ -16,10 +17,6 @@ foreach ($requiredWorkflowPattern in @(
     if ($workflow -notmatch $requiredWorkflowPattern) {
         throw "Workflow is not compatible with the Webgo FTP chroot: $requiredWorkflowPattern"
     }
-}
-
-if ($workflow -match 'ftp_upload [^\r\n]+"/current/') {
-    throw 'FTP uploads must not prepend /current inside the Webgo domain chroot.'
 }
 
 foreach ($requiredRunnerPattern in @(

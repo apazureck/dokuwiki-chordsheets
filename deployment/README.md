@@ -10,7 +10,9 @@ and users live in `shared/conf`.
 - PHP 8.3 or newer with the `ZipArchive` extension is selected for the domain.
 - A valid Let's Encrypt certificate is active and HTTP redirects to the same
   HTTPS hostname.
-- The additional Webgo FTP account is rooted at `/chordsheets-demo/current`.
+- The additional Webgo FTP account can reach the domain document root. The
+  workflow locates it from a fixed allowlist using a random text probe and
+  removes the probe immediately.
 - The FTP endpoint supports explicit TLS on port 21. The workflow refuses
   plaintext FTP and never disables certificate verification.
 
@@ -46,7 +48,7 @@ HMAC secret. It uploads over explicit FTPS:
 1. the single application ZIP under a random hidden name;
 2. a short-lived PHP authorization file that exits without returning its
    contents when requested directly;
-3. the generic PHP runner under a separate random hidden name.
+3. the generic PHP runner under a separate random name.
 
 The pipeline then calls the runner over HTTPS with a timestamped HMAC-signed
 JSON request. The secret is never placed in the URL or repository. Requests
@@ -90,6 +92,8 @@ Local checks:
 ./deployment/tests/zip-output.test.ps1
 ./deployment/tests/workflow-policy.test.ps1
 ./deployment/tests/php-web-deploy-policy.test.ps1
+./deployment/tests/webgo-chroot-policy.test.ps1
+./deployment/tests/webroot-discovery-policy.test.ps1
 docker run --rm `
   -v "${PWD}/deployment:/repo/deployment:ro" `
   composer:2@sha256:f0809732b2188154b3faa8e44ab900595acb0b09cd0aa6c34e798efe4ebc9021 `
