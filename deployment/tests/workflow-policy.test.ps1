@@ -3,6 +3,7 @@ Set-StrictMode -Version Latest
 
 $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $workflowPath = Join-Path $repositoryRoot '.github\workflows\demo-deploy.yml'
+$remotePreflightPath = Join-Path $repositoryRoot 'deployment\remote-upload-preflight.sh'
 $remoteDeployPath = Join-Path $repositoryRoot 'deployment\remote-deploy.sh'
 $remoteRollbackPath = Join-Path $repositoryRoot 'deployment\remote-rollback.sh'
 
@@ -16,13 +17,14 @@ function Assert-NoMatch {
     if ($Content -match $Pattern) { throw $Message }
 }
 
-foreach ($requiredPath in @($workflowPath, $remoteDeployPath, $remoteRollbackPath)) {
+foreach ($requiredPath in @($workflowPath, $remotePreflightPath, $remoteDeployPath, $remoteRollbackPath)) {
     if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
         throw "Missing deployment file: $requiredPath"
     }
 }
 
 $workflow = Get-Content -Raw -LiteralPath $workflowPath
+$remotePreflight = Get-Content -Raw -LiteralPath $remotePreflightPath
 $remoteDeploy = Get-Content -Raw -LiteralPath $remoteDeployPath
 $remoteRollback = Get-Content -Raw -LiteralPath $remoteRollbackPath
 
@@ -41,7 +43,8 @@ Assert-Match $workflow '\[\[\s+"\$FTP_REMOTE_PATH"\s+==\s+''/home/www/chordsheet
 Assert-NoMatch $workflow '\|\|\s*true' 'Rollback failures must not be ignored.'
 Assert-Match $workflow 'dokuwiki-chordsheets-demo\.zip' 'Workflow must deploy one ZIP artifact.'
 Assert-NoMatch $workflow 'dokuwiki-chordsheets-demo\.tgz' 'Workflow must not deploy a tarball.'
-Assert-Match $workflow 'mktemp.+\.upload\.\$GITHUB_SHA\.XXXXXX' 'Workflow must create a random server upload path.'
+Assert-Match $workflow 'deployment/remote-upload-preflight\.sh' 'Workflow must invoke the remote upload preflight script.'
+Assert-Match $remotePreflight 'mktemp.+\.upload\.\$sha\.XXXXXX' 'Remote preflight must create a random server upload path.'
 Assert-Match $workflow 'rollback_state=' 'Workflow must inspect server state after rollback.'
 Assert-Match $workflow 'rollback_verification_failed' 'Workflow must verify a restored release after rollback.'
 

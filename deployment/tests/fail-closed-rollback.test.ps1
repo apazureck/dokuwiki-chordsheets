@@ -3,18 +3,21 @@ Set-StrictMode -Version Latest
 
 $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $workflowPath = Join-Path $repositoryRoot '.github\workflows\demo-deploy.yml'
+$preflightPath = Join-Path $repositoryRoot 'deployment\remote-upload-preflight.sh'
 $deactivatePath = Join-Path $repositoryRoot 'deployment\remote-deactivate.sh'
 
-if (-not (Test-Path -LiteralPath $deactivatePath -PathType Leaf)) {
-    throw 'Missing fail-closed remote deactivation script.'
+foreach ($requiredPath in @($preflightPath, $deactivatePath)) {
+    if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
+        throw "Missing fail-closed deployment script: $requiredPath"
+    }
 }
 
 $workflow = Get-Content -Raw -LiteralPath $workflowPath
+$preflight = Get-Content -Raw -LiteralPath $preflightPath
 $deactivate = Get-Content -Raw -LiteralPath $deactivatePath
 
 foreach ($pattern in @(
-    'realpath -e ''\$FTP_REMOTE_PATH''',
-    'realpath -e ''\$FTP_REMOTE_PATH/uploads''',
+    'deployment/remote-upload-preflight\.sh',
     'rollback_verification_failed',
     '403'' \|\| \"\$status\" == ''404',
     'deployment/remote-deactivate\.sh',
@@ -22,6 +25,15 @@ foreach ($pattern in @(
 )) {
     if ($workflow -notmatch $pattern) {
         throw "Workflow is missing fail-closed rollback protection: $pattern"
+    }
+}
+
+foreach ($pattern in @(
+    'canonical_root=.*realpath -e -- "\$root"',
+    'canonical_uploads=.*realpath -e -- "\$uploads"'
+)) {
+    if ($preflight -notmatch $pattern) {
+        throw "Remote preflight is missing fail-closed path protection: $pattern"
     }
 }
 
