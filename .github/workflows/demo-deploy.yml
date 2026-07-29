@@ -61,6 +61,7 @@ jobs:
           ./deployment/tests/zip-output.test.ps1
           ./deployment/tests/workflow-policy.test.ps1
           ./deployment/tests/fail-closed-rollback.test.ps1
+          ./deployment/tests/canonical-root.test.ps1
 
       - name: Simulate remote ZIP release and rollback
         shell: bash
@@ -137,7 +138,7 @@ jobs:
 
           remote_archive=$(sshpass -e ssh "${ssh_options[@]}" \
             "$FTP_USERNAME@$FTP_SERVER" \
-            "set -euo pipefail; umask 0077; mkdir -p '$FTP_REMOTE_PATH'; test -d '$FTP_REMOTE_PATH'; test ! -L '$FTP_REMOTE_PATH'; test \"\$(realpath -e '$FTP_REMOTE_PATH')\" = '$FTP_REMOTE_PATH'; mkdir -p '$FTP_REMOTE_PATH/uploads'; test -d '$FTP_REMOTE_PATH/uploads'; test ! -L '$FTP_REMOTE_PATH/uploads'; test \"\$(realpath -e '$FTP_REMOTE_PATH/uploads')\" = '$FTP_REMOTE_PATH/uploads'; chmod 0700 '$FTP_REMOTE_PATH/uploads'; mktemp '$FTP_REMOTE_PATH/uploads/.upload.$GITHUB_SHA.XXXXXX'")
+            "set -euo pipefail; umask 0077; canonical_parent=\$(realpath -e '/home/www'); mkdir -p '$FTP_REMOTE_PATH'; test -d '$FTP_REMOTE_PATH'; test ! -L '$FTP_REMOTE_PATH'; canonical_remote_root=\$(realpath -e '$FTP_REMOTE_PATH'); test \"\$canonical_remote_root\" = \"\$canonical_parent/chordsheets-demo\"; mkdir -p '$FTP_REMOTE_PATH/uploads'; test -d '$FTP_REMOTE_PATH/uploads'; test ! -L '$FTP_REMOTE_PATH/uploads'; canonical_uploads=\$(realpath -e '$FTP_REMOTE_PATH/uploads'); test \"\$canonical_uploads\" = \"\$canonical_remote_root/uploads\"; chmod 0700 '$FTP_REMOTE_PATH/uploads'; mktemp '$FTP_REMOTE_PATH/uploads/.upload.$GITHUB_SHA.XXXXXX'")
           [[ "$remote_archive" =~ ^/home/www/chordsheets-demo/uploads/\.upload\.$GITHUB_SHA\.[A-Za-z0-9]{6}$ ]]
           upload_name=${remote_archive##*/}
 
