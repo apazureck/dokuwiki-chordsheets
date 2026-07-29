@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+const CHORDSHEETS_DEPLOY_TOKEN_PREFIX = "<?php exit; __halt_compiler();\n";
+
 final class ChordsheetsDeployException extends RuntimeException
 {
     public function __construct(string $message, public readonly int $httpStatus = 400)
@@ -67,8 +69,18 @@ function chordsheetsDeployReadToken(string $tokenPath): array
     if (!is_int($size) || $size < 1 || $size > 4096) {
         chordsheetsDeployFail('Deployment authorization is invalid.', 403);
     }
+    $contents = file_get_contents($tokenPath);
+    if (!is_string($contents)
+        || !str_starts_with($contents, CHORDSHEETS_DEPLOY_TOKEN_PREFIX)) {
+        chordsheetsDeployFail('Deployment authorization is invalid.', 403);
+    }
     try {
-        $token = json_decode((string) file_get_contents($tokenPath), true, 16, JSON_THROW_ON_ERROR);
+        $token = json_decode(
+            substr($contents, strlen(CHORDSHEETS_DEPLOY_TOKEN_PREFIX)),
+            true,
+            16,
+            JSON_THROW_ON_ERROR
+        );
     } catch (JsonException) {
         chordsheetsDeployFail('Deployment authorization is invalid.', 403);
     }
@@ -82,7 +94,8 @@ function chordsheetsDeploySaveToken(string $tokenPath, array $token): void
 {
     chordsheetsDeployWriteFile(
         $tokenPath,
-        json_encode($token, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES),
+        CHORDSHEETS_DEPLOY_TOKEN_PREFIX
+        . json_encode($token, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES),
         0600
     );
 }
@@ -361,16 +374,20 @@ function chordsheetsDeployActivate(
 ): array {
     $sha = $token['sha'];
     $nonce = $token['nonce'];
-    $archivePath = "$root/uploads/{$token['archive']}";
+    $archivePath = "$documentRoot/{$token['archive']}";
     $releases = "$root/releases";
     $release = "$releases/$sha";
     $staging = "$releases/.$sha.$nonce.tmp";
     $holder = "$root/.previous-$nonce";
     $next = "$root/current.next-$nonce";
     $runnerName = basename($scriptPath);
+    $tokenName = basename($tokenPath);
 
-    if (!preg_match('/^\.deploy-' . preg_quote($nonce, '/') . '\.php$/D', $runnerName)) {
+    if (!preg_match('/^deploy-' . preg_quote($nonce, '/') . '\.php$/D', $runnerName)) {
         chordsheetsDeployFail('Deployment runner name is invalid.', 400);
+    }
+    if ($tokenName !== ".deploy-token-$nonce.php") {
+        chordsheetsDeployFail('Deployment token name is invalid.', 400);
     }
     chordsheetsDeployValidateArchive($archivePath, $token['archive_sha256']);
     if (!is_dir($releases) && !mkdir($releases, 0755, true)) {
@@ -414,6 +431,10 @@ function chordsheetsDeployActivate(
         }
         chmod("$staging/$runnerName", 0600);
         if (!rename($staging, $release)) {
+        if (!copy($tokenPath, "$staging/$tokenName")) {
+            chordsheetsDeployFail('Could not stage deployment authorization.', 500);
+        }
+        chmod("$staging/$tokenName", 0600);
             chordsheetsDeployFail('Could not finalize release staging.', 500);
         }
 
@@ -484,13 +505,15 @@ function chordsheetsDeployFinish(
     $sha = $token['sha'];
     $runnerName = $token['runner'] ?? '';
     $holderName = $token['holder'] ?? '';
+    $tokenName = basename($tokenPath);
     if ($runnerName !== basename($scriptPath)
-        || !preg_match('/^\.deploy-' . preg_quote($nonce, '/') . '\.php$/D', $runnerName)
-        || $holderName !== ".previous-$nonce") {
+        || !preg_match('/^deploy-' . preg_quote($nonce, '/') . '\.php$/D', $runnerName)
+        || $holderName !== ".previous-$nonce"
+        || $tokenName !== ".deploy-token-$nonce.php") {
         chordsheetsDeployFail('Deployment state is invalid.', 500);
     }
     $holder = "$root/$holderName";
-    $archivePath = "$root/uploads/{$token['archive']}";
+    $archivePath = "$holder/{$token['archive']}";
     $release = "$root/releases/$sha";
     if (!is_link($documentRoot) || readlink($documentRoot) !== "releases/$sha") {
         chordsheetsDeployFail('Active deployment does not match the request.', 409);
@@ -508,8 +531,8 @@ function chordsheetsDeployFinish(
         }
         @unlink($failedLink);
         @unlink("$documentRoot/$runnerName");
-        @unlink($archivePath);
-        @unlink($tokenPath);
+        @unlink("$documentRoot/$tokenName");
+        @unlink("$documentRoot/{$token['archive']}");
         if (is_dir($release) && !is_link($release)) {
             chordsheetsDeployRemoveTree($release);
         }
@@ -519,6 +542,8 @@ function chordsheetsDeployFinish(
     @unlink("$holder/$runnerName");
     if (($token['previous_kind'] ?? null) === 'symlink') {
         $previous = "$root/previous";
+    @unlink("$holder/$tokenName");
+    @unlink($archivePath);
         if (file_exists($previous) && !is_link($previous)) {
             chordsheetsDeployFail('Previous deployment pointer is unsafe.', 500);
         }
@@ -529,7 +554,6 @@ function chordsheetsDeployFinish(
             chordsheetsDeployFail('Could not retain previous deployment pointer.', 500);
         }
     }
-    @unlink($archivePath);
     @unlink($tokenPath);
     @unlink($scriptPath);
     return ['ok' => true, 'state' => 'committed', 'release' => $sha];
@@ -553,7 +577,7 @@ function chordsheetsDeployExecute(
     if (!is_string($nonce) || !preg_match('/^[a-f0-9]{32}$/D', $nonce)) {
         chordsheetsDeployFail('Invalid deployment request.');
     }
-    $tokenPath = "$root/uploads/.deploy-$nonce.json";
+    $tokenPath = "$documentRoot/.deploy-token-$nonce.php";
     $token = chordsheetsDeployReadToken($tokenPath);
     chordsheetsDeployValidateAuthorization($request, $signature, $token);
 

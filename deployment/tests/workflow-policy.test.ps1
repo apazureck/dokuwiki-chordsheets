@@ -37,7 +37,7 @@ Assert-Match $workflow 'X-Deploy-Signature:' 'Deployment request must carry an H
 Assert-Match $workflow 'openssl dgst -sha256 -mac HMAC' 'Pipeline must compute the deployment HMAC locally.'
 Assert-Match $workflow 'deployment_may_be_active' 'Pipeline must track potentially active releases.'
 Assert-Match $workflow 'invoke_runner rollback rolled_back' 'Pipeline must roll back failed deployments.'
-Assert-Match $workflow 'ftp_delete "/current/\$runner_name"' 'Pipeline must clean up the transient PHP runner.'
+Assert-Match $workflow 'ftp_delete "/\$runner_name"' 'Pipeline must clean up the transient PHP runner.'
 Assert-Match $workflow 'dokuwiki-chordsheets-demo\.zip' 'Workflow must deploy one ZIP artifact.'
 Assert-NoMatch $workflow 'dokuwiki-chordsheets-demo\.tgz' 'Workflow must not deploy a tarball.'
 Assert-NoMatch $workflow 'sshpass|\bscp\b|StrictHostKeyChecking|UserKnownHostsFile' 'Workflow must not require an SSH shell.'

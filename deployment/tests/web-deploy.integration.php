@@ -53,7 +53,7 @@ function testWriteToken(
     string $archiveHash,
     string $secret
 ): string {
-    $tokenPath = "$root/uploads/.deploy-$nonce.json";
+    $tokenPath = "$root/current/.deploy-token-$nonce.php";
     $token = [
         'version' => 1,
         'nonce' => $nonce,
@@ -64,7 +64,7 @@ function testWriteToken(
         'expires_at' => time() + 600,
         'phase' => 'uploaded',
     ];
-    testAssert(file_put_contents($tokenPath, json_encode($token, JSON_THROW_ON_ERROR), LOCK_EX) !== false, 'Could not write token.');
+    testAssert(file_put_contents($tokenPath, CHORDSHEETS_DEPLOY_TOKEN_PREFIX . json_encode($token, JSON_THROW_ON_ERROR), LOCK_EX) !== false, 'Could not write token.');
     chmod($tokenPath, 0600);
     return $tokenPath;
 }
@@ -80,9 +80,7 @@ if (!class_exists(ZipArchive::class)) {
 
 $root = sys_get_temp_dir() . '/chordsheets-php-deploy-' . bin2hex(random_bytes(8));
 $current = "$root/current";
-$uploads = "$root/uploads";
 mkdir($current, 0700, true);
-mkdir($uploads, 0700, true);
 
 try {
     $runnerSource = realpath($argv[1] ?? __DIR__ . '/../web-deploy.php');
@@ -91,9 +89,9 @@ try {
     $nonce1 = str_repeat('1', 32);
     $sha1 = str_repeat('a', 40);
     $secret1 = str_repeat('b', 64);
-    $runnerName1 = ".deploy-$nonce1.php";
+    $runnerName1 = "deploy-$nonce1.php";
     $archiveName1 = ".release-$nonce1.zip";
-    $archivePath1 = "$uploads/$archiveName1";
+    $archivePath1 = "$current/$archiveName1";
     $archiveHash1 = testCreateArchive($archivePath1, 'release-one', $argv[2] ?? null);
     copy($runnerSource, "$current/$runnerName1");
     $tokenPath1 = testWriteToken($root, $nonce1, $sha1, $archiveName1, $archiveHash1, $secret1);
@@ -143,9 +141,9 @@ try {
     $nonce2 = str_repeat('2', 32);
     $sha2 = str_repeat('c', 40);
     $secret2 = str_repeat('d', 64);
-    $runnerName2 = ".deploy-$nonce2.php";
+    $runnerName2 = "deploy-$nonce2.php";
     $archiveName2 = ".release-$nonce2.zip";
-    $archivePath2 = "$uploads/$archiveName2";
+    $archivePath2 = "$current/$archiveName2";
     $archiveHash2 = testCreateArchive($archivePath2, 'release-two', $argv[2] ?? null);
     copy($runnerSource, "$current/$runnerName2");
     $tokenPath2 = testWriteToken($root, $nonce2, $sha2, $archiveName2, $archiveHash2, $secret2);

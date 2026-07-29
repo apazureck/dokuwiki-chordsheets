@@ -10,7 +10,7 @@ and users live in `shared/conf`.
 - PHP 8.3 or newer with the `ZipArchive` extension is selected for the domain.
 - A valid Let's Encrypt certificate is active and HTTP redirects to the same
   HTTPS hostname.
-- The additional Webgo FTP account is rooted at `/chordsheets-demo`.
+- The additional Webgo FTP account is rooted at `/chordsheets-demo/current`.
 - The FTP endpoint supports explicit TLS on port 21. The workflow refuses
   plaintext FTP and never disables certificate verification.
 
@@ -43,9 +43,10 @@ The workflow builds one verified `dokuwiki-chordsheets-demo.zip`. For each
 deployment it generates a 128-bit random runner name and a separate 256-bit
 HMAC secret. It uploads over explicit FTPS:
 
-1. the single application ZIP into `/uploads`;
-2. a short-lived authorization file outside the public document root;
-3. the generic PHP runner under a random name in `/current`.
+1. the single application ZIP under a random hidden name;
+2. a short-lived PHP authorization file that exits without returning its
+   contents when requested directly;
+3. the generic PHP runner under a separate random hidden name.
 
 The pipeline then calls the runner over HTTPS with a timestamped HMAC-signed
 JSON request. The secret is never placed in the URL or repository. Requests
@@ -74,7 +75,6 @@ The resulting layout is:
   shared/
     conf/
     data/
-  uploads/
 ```
 
 The setup boots DokuWiki without `install.php`, enables ACLs, disables
