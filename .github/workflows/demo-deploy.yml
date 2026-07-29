@@ -62,6 +62,7 @@ jobs:
           ./deployment/tests/workflow-policy.test.ps1
           ./deployment/tests/fail-closed-rollback.test.ps1
           ./deployment/tests/canonical-root.test.ps1
+          ./deployment/tests/remote-upload-name.test.ps1
 
       - name: Simulate remote ZIP release and rollback
         shell: bash
@@ -136,11 +137,12 @@ jobs:
           release_archive="$RUNNER_TEMP/dokuwiki-chordsheets-demo.zip"
           archive_sha256=$(sha256sum "$release_archive" | awk '{print $1}')
 
-          remote_archive=$(sshpass -e ssh "${ssh_options[@]}" \
+          remote_result=$(sshpass -e ssh "${ssh_options[@]}" \
             "$FTP_USERNAME@$FTP_SERVER" \
-            "set -euo pipefail; umask 0077; canonical_parent=\$(realpath -e '/home/www'); mkdir -p '$FTP_REMOTE_PATH'; test -d '$FTP_REMOTE_PATH'; test ! -L '$FTP_REMOTE_PATH'; canonical_remote_root=\$(realpath -e '$FTP_REMOTE_PATH'); test \"\$canonical_remote_root\" = \"\$canonical_parent/chordsheets-demo\"; mkdir -p '$FTP_REMOTE_PATH/uploads'; test -d '$FTP_REMOTE_PATH/uploads'; test ! -L '$FTP_REMOTE_PATH/uploads'; canonical_uploads=\$(realpath -e '$FTP_REMOTE_PATH/uploads'); test \"\$canonical_uploads\" = \"\$canonical_remote_root/uploads\"; chmod 0700 '$FTP_REMOTE_PATH/uploads'; mktemp '$FTP_REMOTE_PATH/uploads/.upload.$GITHUB_SHA.XXXXXX'")
-          [[ "$remote_archive" =~ ^/home/www/chordsheets-demo/uploads/\.upload\.$GITHUB_SHA\.[A-Za-z0-9]{6}$ ]]
-          upload_name=${remote_archive##*/}
+            "set -euo pipefail; umask 0077; canonical_parent=\$(realpath -e '/home/www'); mkdir -p '$FTP_REMOTE_PATH'; test -d '$FTP_REMOTE_PATH'; test ! -L '$FTP_REMOTE_PATH'; canonical_remote_root=\$(realpath -e '$FTP_REMOTE_PATH'); test \"\$canonical_remote_root\" = \"\$canonical_parent/chordsheets-demo\"; mkdir -p '$FTP_REMOTE_PATH/uploads'; test -d '$FTP_REMOTE_PATH/uploads'; test ! -L '$FTP_REMOTE_PATH/uploads'; canonical_uploads=\$(realpath -e '$FTP_REMOTE_PATH/uploads'); test \"\$canonical_uploads\" = \"\$canonical_remote_root/uploads\"; chmod 0700 '$FTP_REMOTE_PATH/uploads'; upload_file=\$(mktemp '$FTP_REMOTE_PATH/uploads/.upload.$GITHUB_SHA.XXXXXX'); printf 'UPLOAD:%s' \"\${upload_file##*/}\"")
+          [[ "$remote_result" =~ ^UPLOAD:(\.upload\.$GITHUB_SHA\.[A-Za-z0-9]{6})$ ]]
+          upload_name=${BASH_REMATCH[1]}
+          remote_archive="$FTP_REMOTE_PATH/uploads/$upload_name"
 
           sshpass -e scp \
             -P "$FTP_PORT" \
