@@ -3,9 +3,7 @@ Set-StrictMode -Version Latest
 
 $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $workflowPath = Join-Path $repositoryRoot '.github\workflows\demo-deploy.yml'
-$remotePreflightPath = Join-Path $repositoryRoot 'deployment\remote-upload-preflight.sh'
-$remoteDeployPath = Join-Path $repositoryRoot 'deployment\remote-deploy.sh'
-$remoteRollbackPath = Join-Path $repositoryRoot 'deployment\remote-rollback.sh'
+$runnerPath = Join-Path $repositoryRoot 'deployment\web-deploy.php'
 
 function Assert-Match {
     param([string]$Content, [string]$Pattern, [string]$Message)
@@ -17,16 +15,14 @@ function Assert-NoMatch {
     if ($Content -match $Pattern) { throw $Message }
 }
 
-foreach ($requiredPath in @($workflowPath, $remotePreflightPath, $remoteDeployPath, $remoteRollbackPath)) {
+foreach ($requiredPath in @($workflowPath, $runnerPath)) {
     if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
         throw "Missing deployment file: $requiredPath"
     }
 }
 
 $workflow = Get-Content -Raw -LiteralPath $workflowPath
-$remotePreflight = Get-Content -Raw -LiteralPath $remotePreflightPath
-$remoteDeploy = Get-Content -Raw -LiteralPath $remoteDeployPath
-$remoteRollback = Get-Content -Raw -LiteralPath $remoteRollbackPath
+$runner = Get-Content -Raw -LiteralPath $runnerPath
 
 Assert-Match $workflow '(?m)^\s*workflow_dispatch:\s*$' 'Workflow must be manually dispatched.'
 Assert-NoMatch $workflow '(?m)^\s*(push|pull_request|pull_request_target|schedule):\s*$' 'Workflow must not deploy automatically.'
@@ -34,23 +30,24 @@ Assert-Match $workflow '(?ms)^permissions:\s*\r?\n\s*contents:\s*read\s*$' 'Work
 Assert-Match $workflow '(?m)^\s*environment:\s*demo\s*$' 'Deploy job must use the demo environment.'
 Assert-Match $workflow '(?m)^\s*cancel-in-progress:\s*false\s*$' 'Deployments must not cancel one another.'
 Assert-Match $workflow 'actions/checkout@[a-f0-9]{40}' 'Checkout action must be commit-pinned.'
-Assert-Match $workflow 'StrictHostKeyChecking=yes' 'SSH must enforce host-key checking.'
-Assert-NoMatch $workflow 'StrictHostKeyChecking=no' 'SSH host-key checks must never be disabled.'
-Assert-Match $workflow 'GlobalKnownHostsFile=/dev/null' 'SSH must not consult global host keys.'
-Assert-NoMatch $workflow '(?i)ftp://|port\s*[:=]\s*21' 'Plain FTP is forbidden.'
-Assert-Match $workflow '\$\{\{\s*vars\.FTP_KNOWN_HOSTS\s*\}\}' 'Workflow must use verified known hosts.'
-Assert-Match $workflow '\[\[\s+"\$FTP_REMOTE_PATH"\s+==\s+''/home/www/chordsheets-demo''\s+\]\]' 'Workflow must pin the remote path.'
-Assert-NoMatch $workflow '\|\|\s*true' 'Rollback failures must not be ignored.'
+Assert-Match $workflow 'composer:2@sha256:[a-f0-9]{64}' 'PHP integration image must be digest-pinned.'
+Assert-Match $workflow '--ssl-reqd' 'FTP transport must require TLS.'
+Assert-Match $workflow '--proto ''=https''' 'Deployment activation must require HTTPS.'
+Assert-Match $workflow 'X-Deploy-Signature:' 'Deployment request must carry an HMAC signature.'
+Assert-Match $workflow 'openssl dgst -sha256 -mac HMAC' 'Pipeline must compute the deployment HMAC locally.'
+Assert-Match $workflow 'deployment_may_be_active' 'Pipeline must track potentially active releases.'
+Assert-Match $workflow 'invoke_runner rollback rolled_back' 'Pipeline must roll back failed deployments.'
+Assert-Match $workflow 'ftp_delete "/current/\$runner_name"' 'Pipeline must clean up the transient PHP runner.'
 Assert-Match $workflow 'dokuwiki-chordsheets-demo\.zip' 'Workflow must deploy one ZIP artifact.'
 Assert-NoMatch $workflow 'dokuwiki-chordsheets-demo\.tgz' 'Workflow must not deploy a tarball.'
-Assert-Match $workflow 'deployment/remote-upload-preflight\.sh' 'Workflow must invoke the remote upload preflight script.'
-Assert-Match $remotePreflight 'mktemp.+\.upload\.\$sha\.XXXXXX' 'Remote preflight must create a random server upload path.'
-Assert-Match $workflow 'rollback_state=' 'Workflow must inspect server state after rollback.'
-Assert-Match $workflow 'rollback_verification_failed' 'Workflow must verify a restored release after rollback.'
+Assert-NoMatch $workflow 'sshpass|\bscp\b|StrictHostKeyChecking|UserKnownHostsFile' 'Workflow must not require an SSH shell.'
+Assert-NoMatch $workflow 'ftp://[^"$\r\n]*:[^"$\r\n]*@' 'Credentials must not be embedded in an FTP URL.'
+Assert-NoMatch $workflow '--insecure|-k(?:\s|$)' 'TLS verification must never be disabled.'
+Assert-NoMatch $workflow '\|\|\s*true' 'Deployment or rollback failures must not be ignored.'
 
-$scpCount = [regex]::Matches($workflow, 'sshpass\s+-e\s+scp').Count
-if ($scpCount -ne 1) {
-    throw "Workflow must contain exactly one SCP upload, found $scpCount."
+$uploadCount = [regex]::Matches($workflow, 'ftp_upload\s+"').Count
+if ($uploadCount -ne 3) {
+    throw "Workflow must upload one ZIP plus one token and one runner, found $uploadCount uploads."
 }
 
 $secretReferences = [regex]::Matches($workflow, 'secrets\.([A-Z0-9_]+)') |
@@ -61,16 +58,12 @@ if (($secretReferences -join ',') -ne ($expectedSecrets -join ',')) {
     throw "Unexpected secret references: $($secretReferences -join ', ')"
 }
 
-Assert-Match $remoteDeploy 'unzip\s+-tqq' 'Remote deploy must CRC-test the ZIP.'
-Assert-Match $remoteDeploy 'unzip\s+-q\s+"\$archive"\s+-d\s+"\$staging"' 'Remote deploy must extract into fresh staging.'
-Assert-Match $remoteDeploy 'zipinfo\s+-l' 'Remote deploy must inspect ZIP entry types.'
-Assert-Match $remoteDeploy '\.deploy\.lock' 'Remote deploy must serialize server operations.'
-Assert-Match $remoteDeploy 'Persistent tree contains a link or special file' 'Remote deploy must reject unsafe persistent entries.'
-Assert-NoMatch $remoteDeploy 'tar\s+-[ctx].*zf' 'Remote deploy must not use tar for the release.'
-Assert-Match $remoteDeploy 'test ! -e|!\s+-e' 'Remote deploy must reject install.php.'
-Assert-Match $remoteRollback '\^\[a-f0-9\]\{40\}\$' 'Rollback must require a full Git SHA.'
-Assert-Match $remoteRollback '\.deploy\.lock' 'Rollback must use the deployment lock.'
-Assert-Match $remoteRollback 'lib/plugins/chordsheets/syntax\.php' 'Rollback must verify the plugin entry point.'
-Assert-NoMatch ($remoteDeploy + $remoteRollback) 'chmod\s+-R\s+777|rm\s+-rf\s+["'']?\$(root|remote_root)' 'Remote scripts contain an unsafe broad mutation.'
+Assert-Match $runner 'hash_hmac' 'PHP runner must verify HMAC requests.'
+Assert-Match $runner 'hash_equals' 'PHP runner must use constant-time signature comparison.'
+Assert-Match $runner 'ZipArchive' 'PHP runner must use PHP ZIP extraction.'
+Assert-Match $runner 'getExternalAttributesIndex' 'PHP runner must inspect ZIP entry types.'
+Assert-Match $runner '536_870_912' 'PHP runner must cap expanded archive size.'
+Assert-Match $runner '25_000' 'PHP runner must cap ZIP entry count.'
+Assert-NoMatch $runner 'shell_exec|exec\s*\(|system\s*\(|passthru\s*\(' 'PHP runner must not invoke a shell.'
 
 Write-Host 'workflow-policy.test.ps1: PASS'
