@@ -64,6 +64,7 @@ jobs:
           ./deployment/tests/canonical-root.test.ps1
           ./deployment/tests/remote-upload-name.test.ps1
           ./deployment/tests/remote-upload-preflight-policy.test.ps1
+          ./deployment/tests/remote-shell-policy.test.ps1
           ./deployment/tests/upload-cleanup.test.ps1
 
       - name: Simulate remote ZIP release and rollback
@@ -139,6 +140,17 @@ jobs:
 
           release_archive="$RUNNER_TEMP/dokuwiki-chordsheets-demo.zip"
           archive_sha256=$(sha256sum "$release_archive" | awk '{print $1}')
+
+          if ! remote_shell_probe=$(sshpass -e ssh "${ssh_options[@]}" \
+            "$FTP_USERNAME@$FTP_SERVER" \
+            "command -v bash >/dev/null 2>&1 && printf REMOTE_SHELL_OK"); then
+            echo 'SSH account does not permit remote Bash command execution; use a Webgo SSH-enabled account rather than an FTP-only account.' >&2
+            exit 1
+          fi
+          if [[ "$remote_shell_probe" != 'REMOTE_SHELL_OK' ]]; then
+            echo 'Remote Bash capability probe returned an unexpected response.' >&2
+            exit 1
+          fi
 
           if ! remote_result=$(sshpass -e ssh "${ssh_options[@]}" \
             "$FTP_USERNAME@$FTP_SERVER" \
