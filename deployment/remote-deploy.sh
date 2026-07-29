@@ -37,6 +37,11 @@ mkdir -p "$uploads" "$releases" "$shared"
 chmod 0700 "$uploads" "$shared"
 
 [[ -f "$archive" && ! -L "$archive" ]] || { echo 'Uploaded ZIP is missing or unsafe.' >&2; exit 3; }
+cleanup_archive() {
+  rm -f -- "$archive"
+}
+trap cleanup_archive EXIT
+
 archive_bytes=$(stat -c '%s' "$archive")
 (( archive_bytes > 0 && archive_bytes <= 67108864 )) || { echo 'ZIP size is outside the allowed range.' >&2; exit 3; }
 actual_hash=$(sha256sum "$archive" | awk '{print $1}')
@@ -75,6 +80,7 @@ unzip -Z1 "$archive" | awk '
 mkdir "$lock" 2>/dev/null || { echo 'Another deployment is active.' >&2; exit 5; }
 locked=1
 cleanup() {
+  rm -f -- "$archive"
   [[ ! -e "$staging" && ! -L "$staging" ]] || rm -rf -- "$staging"
   if [[ "${locked:-0}" -eq 1 && -d "$lock" && ! -L "$lock" ]]; then
     rmdir "$lock"

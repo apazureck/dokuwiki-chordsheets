@@ -63,6 +63,8 @@ jobs:
           ./deployment/tests/fail-closed-rollback.test.ps1
           ./deployment/tests/canonical-root.test.ps1
           ./deployment/tests/remote-upload-name.test.ps1
+          ./deployment/tests/remote-upload-preflight-policy.test.ps1
+          ./deployment/tests/upload-cleanup.test.ps1
 
       - name: Simulate remote ZIP release and rollback
         shell: bash
@@ -77,7 +79,8 @@ jobs:
             -lc '
               apt-get update -qq
               DEBIAN_FRONTEND=noninteractive apt-get install -y -qq unzip >/dev/null
-              /repo/deployment/tests/remote-deploy.integration.sh /input/release.zip
+              bash /repo/deployment/tests/remote-upload-preflight.integration.sh /repo/deployment/remote-upload-preflight.sh
+              bash /repo/deployment/tests/remote-deploy.integration.sh /input/release.zip
             '
 
       - name: Run local DokuWiki smoke test
@@ -137,12 +140,30 @@ jobs:
           release_archive="$RUNNER_TEMP/dokuwiki-chordsheets-demo.zip"
           archive_sha256=$(sha256sum "$release_archive" | awk '{print $1}')
 
-          remote_result=$(sshpass -e ssh "${ssh_options[@]}" \
+          if ! remote_result=$(sshpass -e ssh "${ssh_options[@]}" \
             "$FTP_USERNAME@$FTP_SERVER" \
-            "set -euo pipefail; umask 0077; canonical_parent=\$(realpath -e '/home/www'); mkdir -p '$FTP_REMOTE_PATH'; test -d '$FTP_REMOTE_PATH'; test ! -L '$FTP_REMOTE_PATH'; canonical_remote_root=\$(realpath -e '$FTP_REMOTE_PATH'); test \"\$canonical_remote_root\" = \"\$canonical_parent/chordsheets-demo\"; mkdir -p '$FTP_REMOTE_PATH/uploads'; test -d '$FTP_REMOTE_PATH/uploads'; test ! -L '$FTP_REMOTE_PATH/uploads'; canonical_uploads=\$(realpath -e '$FTP_REMOTE_PATH/uploads'); test \"\$canonical_uploads\" = \"\$canonical_remote_root/uploads\"; chmod 0700 '$FTP_REMOTE_PATH/uploads'; upload_file=\$(mktemp '$FTP_REMOTE_PATH/uploads/.upload.$GITHUB_SHA.XXXXXX'); printf 'UPLOAD:%s' \"\${upload_file##*/}\"")
+            "bash -s -- '$FTP_REMOTE_PATH' '$GITHUB_SHA'" \
+            < deployment/remote-upload-preflight.sh); then
+            echo 'Remote upload preflight failed.' >&2
+            exit 1
+          fi
           [[ "$remote_result" =~ ^UPLOAD:(\.upload\.$GITHUB_SHA\.[A-Za-z0-9]{6})$ ]]
           upload_name=${BASH_REMATCH[1]}
           remote_archive="$FTP_REMOTE_PATH/uploads/$upload_name"
+          remote_upload_pending=1
+
+          cleanup_remote_upload() {
+            if [[ "$remote_upload_pending" -eq 0 ]]; then
+              return
+            fi
+
+            if ! sshpass -e ssh "${ssh_options[@]}" \
+              "$FTP_USERNAME@$FTP_SERVER" \
+              "rm -f -- '$remote_archive'"; then
+              echo 'Warning: failed to remove pending remote upload.' >&2
+            fi
+          }
+          trap cleanup_remote_upload EXIT
 
           sshpass -e scp \
             -P "$FTP_PORT" \
@@ -160,6 +181,8 @@ jobs:
             "bash -s -- '$FTP_REMOTE_PATH' '$GITHUB_SHA' '$archive_sha256' '$upload_name'" \
             < deployment/remote-deploy.sh
 
+          remote_upload_pending=0
+          trap - EXIT
           smoke_failed=0
           curl --fail --silent --show-error \
             "$DEMO_URL/doku.php?id=start" \

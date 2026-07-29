@@ -4,6 +4,7 @@ Set-StrictMode -Version Latest
 $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $workflow = Get-Content -Raw -LiteralPath (Join-Path $repositoryRoot '.github\workflows\demo-deploy.yml')
 $scripts = @(
+    'deployment\remote-upload-preflight.sh',
     'deployment\remote-deploy.sh',
     'deployment\remote-rollback.sh',
     'deployment\remote-deactivate.sh'
@@ -11,11 +12,8 @@ $scripts = @(
     Get-Content -Raw -LiteralPath (Join-Path $repositoryRoot $_)
 }
 
-if ($workflow -notmatch "realpath -e '/home/www'") {
-    throw 'Upload preflight must canonicalize the Webgo parent directory.'
-}
-if ($workflow -notmatch 'canonical_remote_root') {
-    throw 'Upload preflight must compare the canonical direct-child target.'
+if ($workflow -notmatch 'deployment/remote-upload-preflight\.sh') {
+    throw 'Workflow must invoke the remote upload preflight script.'
 }
 
 foreach ($script in $scripts) {
