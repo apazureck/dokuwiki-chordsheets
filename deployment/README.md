@@ -33,6 +33,7 @@ Environment secrets:
 Environment variables:
 
 - `FTP_PORT=21`
+- `FTP_REMOTE_PATH=/home/www/chordsheets-demo`
 - `DEMO_URL=https://chordsheets.pazureck.de`
 
 The environment is restricted to the `master` branch. The workflow can only be
