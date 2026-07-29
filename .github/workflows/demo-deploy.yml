@@ -61,6 +61,7 @@ jobs:
           ./deployment/tests/zip-output.test.ps1
           ./deployment/tests/workflow-policy.test.ps1
           ./deployment/tests/php-web-deploy-policy.test.ps1
+          ./deployment/tests/webgo-chroot-policy.test.ps1
 
       - name: Test PHP web deployment and rollback
         shell: bash
@@ -113,15 +114,16 @@ jobs:
           nonce=$(openssl rand -hex 16)
           deploy_secret=$(openssl rand -hex 32)
           expires_at=$(($(date +%s) + 900))
-          runner_name=".deploy-$nonce.php"
+          runner_name="deploy-$nonce.php"
           archive_name=".release-$nonce.zip"
-          token_name=".deploy-$nonce.json"
+          token_name=".deploy-token-$nonce.php"
           runner_url="$DEMO_URL/$runner_name"
           ftp_base="ftp://$FTP_SERVER:$FTP_PORT"
           token_file="$RUNNER_TEMP/$token_name"
           request_file="$RUNNER_TEMP/deployment-request.json"
           response_file="$RUNNER_TEMP/deployment-response.json"
 
+          printf '%s\n' '<?php exit; __halt_compiler();' > "$token_file"
           jq -n \
             --arg nonce "$nonce" \
             --arg sha "$GITHUB_SHA" \
@@ -138,7 +140,7 @@ jobs:
               secret: $secret,
               expires_at: $expires_at,
               phase: "uploaded"
-            }' > "$token_file"
+            }' >> "$token_file"
 
           ftp_options=(
             --fail
@@ -219,16 +221,16 @@ jobs:
             if [[ "$deployment_may_be_active" -eq 1 ]]; then
               invoke_runner rollback rolled_back >/dev/null 2>&1
             fi
-            ftp_delete "/current/$runner_name"
-            ftp_delete "/uploads/$archive_name"
-            ftp_delete "/uploads/$token_name"
+            ftp_delete "/$runner_name"
+            ftp_delete "/$archive_name"
+            ftp_delete "/$token_name"
             exit "$status"
           }
           trap cleanup_deployment EXIT
 
-          ftp_upload "$release_archive" "/uploads/$archive_name"
-          ftp_upload "$runner_source" "/current/$runner_name"
-          ftp_upload "$token_file" "/uploads/$token_name"
+          ftp_upload "$release_archive" "/$archive_name"
+          ftp_upload "$runner_source" "/$runner_name"
+          ftp_upload "$token_file" "/$token_name"
 
           deployment_may_be_active=1
           invoke_runner deploy active
