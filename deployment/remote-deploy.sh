@@ -17,7 +17,10 @@ for command_name in unzip zipinfo realpath sha256sum stat php; do
 done
 
 mkdir -p "$root"
-[[ "$(realpath -e "$root")" == "$root" ]] || { echo 'Remote root resolves through a symlink.' >&2; exit 2; }
+[[ -d "$root" && ! -L "$root" ]] || { echo 'Remote root must be a real directory.' >&2; exit 2; }
+canonical_parent=$(realpath -e /home/www)
+canonical_root=$(realpath -e "$root")
+[[ "$canonical_root" == "$canonical_parent/${root##*/}" ]] || { echo 'Remote root resolves through a symlink.' >&2; exit 2; }
 
 uploads="$root/uploads"
 releases="$root/releases"

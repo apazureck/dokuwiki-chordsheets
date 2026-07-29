@@ -16,7 +16,9 @@ expected_sha=${2:-}
 
 test -d "$remote_root"
 test ! -L "$remote_root"
-test "$(realpath -e "$remote_root")" = "$remote_root"
+canonical_parent=$(realpath -e /home/www)
+canonical_root=$(realpath -e "$remote_root")
+test "$canonical_root" = "$canonical_parent/${remote_root##*/}"
 
 lock="$remote_root/.deploy.lock"
 mkdir "$lock" 2>/dev/null || {

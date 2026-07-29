@@ -16,7 +16,10 @@ if [[ ! "$failed_sha" =~ ^[a-f0-9]{40}$ ]]; then
 fi
 
 test -d "$remote_root"
-if [[ "$(realpath -e "$remote_root")" != "$remote_root" ]]; then
+test ! -L "$remote_root"
+canonical_parent=$(realpath -e /home/www)
+canonical_root=$(realpath -e "$remote_root")
+if [[ "$canonical_root" != "$canonical_parent/${remote_root##*/}" ]]; then
   echo "Remote root must not resolve through a symlink." >&2
   exit 2
 fi
