@@ -93,6 +93,7 @@ jobs:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PORT: ${{ vars.FTP_PORT }}
+          FTP_REMOTE_PATH: ${{ vars.FTP_REMOTE_PATH }}
           DEMO_URL: ${{ vars.DEMO_URL }}
         run: |
           set -euo pipefail
@@ -101,12 +102,14 @@ jobs:
           : "${FTP_PASSWORD:?FTP_PASSWORD is required}"
           : "${FTP_SERVER:?FTP_SERVER is required}"
           : "${FTP_USERNAME:?FTP_USERNAME is required}"
+          : "${FTP_REMOTE_PATH:?FTP_REMOTE_PATH is required}"
           : "${DEMO_URL:?DEMO_URL is required}"
 
           FTP_PORT=${FTP_PORT:-21}
           [[ "$FTP_PORT" == '21' ]]
           [[ "$FTP_SERVER" =~ ^[A-Za-z0-9.-]+$ ]]
           [[ "$FTP_USERNAME" =~ ^[A-Za-z0-9._-]+$ ]]
+          [[ "$FTP_REMOTE_PATH" == '/home/www/chordsheets-demo' ]]
           [[ "$DEMO_URL" == 'https://chordsheets.pazureck.de' ]]
 
           release_archive="$RUNNER_TEMP/dokuwiki-chordsheets-demo.zip"
@@ -125,7 +128,7 @@ jobs:
           probe_remote_path=''
           ftp_web_root=''
           web_root_found=0
-          web_root_candidates=('' '/current' '/chordsheets-demo/current')
+          web_root_candidates=('' '/current' '/chordsheets-demo/current' "$FTP_REMOTE_PATH/current")
           token_file="$RUNNER_TEMP/$token_name"
           request_file="$RUNNER_TEMP/deployment-request.json"
           response_file="$RUNNER_TEMP/deployment-response.json"

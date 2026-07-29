@@ -5,8 +5,11 @@ $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $workflow = Get-Content -Raw -LiteralPath (Join-Path $repositoryRoot '.github\workflows\demo-deploy.yml')
 
 foreach ($requiredPattern in @(
+    'FTP_REMOTE_PATH: \$\{\{ vars\.FTP_REMOTE_PATH \}\}',
+    'FTP_REMOTE_PATH is required',
+    '\[\[ "\$FTP_REMOTE_PATH" == ''/home/www/chordsheets-demo'' \]\]',
     'web_root_candidates=\(',
-    "'' '/current' '/chordsheets-demo/current'",
+    'web_root_candidates=.*"\$FTP_REMOTE_PATH/current"',
     'probe_name="deploy-probe-\$nonce\.txt"',
     'printf ''%s'' "\$nonce" > "\$probe_file"',
     'ftp_upload "\$probe_file" "\$candidate/\$probe_name"',
