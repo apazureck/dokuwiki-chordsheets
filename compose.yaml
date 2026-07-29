@@ -1,0 +1,85 @@
+x-dokuwiki-image: &dokuwiki-image
+  dokuwiki/dokuwiki:2026-07-14a@sha256:5bab64f737257fa5778b35cc920bd9527fb133a71a7535fb2ef319ecc93b384e
+
+services:
+  storage-init:
+    image: *dokuwiki-image
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-eu", "-c"]
+    command:
+      - |
+        mkdir -p /storage/conf /storage/data/pages /storage/lib/plugins
+        cp /seed/local.php /storage/conf/local.php
+        cp /seed/start.txt /storage/data/pages/start.txt
+        chown -R 1000:1000 /storage
+    volumes:
+      - dokuwiki-data:/storage
+      - type: bind
+        source: ./docker/dokuwiki
+        target: /seed
+        read_only: true
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  dokuwiki:
+    image: *dokuwiki-image
+    user: "1000:1000"
+    depends_on:
+      storage-init:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:${DOKUWIKI_PORT:-8080}:8080"
+    environment:
+      PHP_TIMEZONE: Europe/Berlin
+    volumes:
+      - dokuwiki-data:/storage
+      - type: bind
+        source: ./conf
+        target: /storage/lib/plugins/chordsheets/conf
+        read_only: true
+      - type: bind
+        source: ./img
+        target: /storage/lib/plugins/chordsheets/img
+        read_only: true
+      - type: bind
+        source: ./js
+        target: /storage/lib/plugins/chordsheets/js
+        read_only: true
+      - type: bind
+        source: ./plugin.info.txt
+        target: /storage/lib/plugins/chordsheets/plugin.info.txt
+        read_only: true
+      - type: bind
+        source: ./script.js
+        target: /storage/lib/plugins/chordsheets/script.js
+        read_only: true
+      - type: bind
+        source: ./style.css
+        target: /storage/lib/plugins/chordsheets/style.css
+        read_only: true
+      - type: bind
+        source: ./syntax.php
+        target: /storage/lib/plugins/chordsheets/syntax.php
+        read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "--silent",
+          "--fail-with-body",
+          "http://localhost:8080/health.php",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    stop_grace_period: 10s
+
+volumes:
+  dokuwiki-data:

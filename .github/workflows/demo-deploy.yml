@@ -1,0 +1,251 @@
+name: Deploy DokuWiki demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Upload and activate the verified ZIP release
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chordsheets-demo-deployment
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: demo
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Read pinned DokuWiki manifest
+        id: manifest
+        shell: pwsh
+        run: |
+          $manifest = Import-PowerShellDataFile ./deployment/demo-manifest.psd1
+          "url=$($manifest.DokuWiki.Url)" >> $env:GITHUB_OUTPUT
+          "sha256=$($manifest.DokuWiki.Sha256)" >> $env:GITHUB_OUTPUT
+          "root=$($manifest.DokuWiki.RootName)" >> $env:GITHUB_OUTPUT
+
+      - name: Download pinned DokuWiki release
+        shell: bash
+        env:
+          DOKUWIKI_URL: ${{ steps.manifest.outputs.url }}
+        run: |
+          set -euo pipefail
+          curl --fail --location --proto '=https' --tlsv1.2 \
+            --output "$RUNNER_TEMP/dokuwiki.tgz" \
+            "$DOKUWIKI_URL"
+
+      - name: Build verified demo ZIP
+        shell: pwsh
+        run: |
+          ./deployment/build-demo-zip.ps1 `
+            -DokuWikiArchive "$env:RUNNER_TEMP/dokuwiki.tgz" `
+            -DokuWikiSha256 '${{ steps.manifest.outputs.sha256 }}' `
+            -DokuWikiRootName '${{ steps.manifest.outputs.root }}' `
+            -OutputArchive "$env:RUNNER_TEMP/dokuwiki-chordsheets-demo.zip"
+
+      - name: Run deployment tests
+        shell: pwsh
+        run: |
+          ./deployment/tests/artifact-build.test.ps1
+          ./deployment/tests/zip-output.test.ps1
+          ./deployment/tests/workflow-policy.test.ps1
+          ./deployment/tests/fail-closed-rollback.test.ps1
+
+      - name: Simulate remote ZIP release and rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            --entrypoint bash \
+            --tmpfs /home/www:rw,exec,nosuid,size=128m \
+            -v "$RUNNER_TEMP/dokuwiki-chordsheets-demo.zip:/input/release.zip:ro" \
+            -v "$GITHUB_WORKSPACE/deployment:/repo/deployment:ro" \
+            dokuwiki/dokuwiki:2026-07-14a@sha256:5bab64f737257fa5778b35cc920bd9527fb133a71a7535fb2ef319ecc93b384e \
+            -lc '
+              apt-get update -qq
+              DEBIAN_FRONTEND=noninteractive apt-get install -y -qq unzip >/dev/null
+              /repo/deployment/tests/remote-deploy.integration.sh /input/release.zip
+            '
+
+      - name: Run local DokuWiki smoke test
+        shell: pwsh
+        run: |
+          try {
+            ./docker/smoke-test.ps1
+          } finally {
+            docker compose down --volumes
+          }
+
+      - name: Deploy one ZIP over SFTP and SSH
+        if: ${{ inputs.deploy }}
+        shell: bash
+        env:
+          SSHPASS: ${{ secrets.FTP_PASSWORD }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_KNOWN_HOSTS: ${{ vars.FTP_KNOWN_HOSTS }}
+          FTP_PORT: ${{ vars.FTP_PORT }}
+          FTP_REMOTE_PATH: ${{ vars.FTP_REMOTE_PATH }}
+          DEMO_URL: ${{ vars.DEMO_URL }}
+        run: |
+          set -euo pipefail
+
+          : "${SSHPASS:?FTP_PASSWORD is required}"
+          : "${FTP_SERVER:?FTP_SERVER is required}"
+          : "${FTP_USERNAME:?FTP_USERNAME is required}"
+          : "${FTP_KNOWN_HOSTS:?FTP_KNOWN_HOSTS is required}"
+          : "${FTP_REMOTE_PATH:?FTP_REMOTE_PATH is required}"
+          : "${DEMO_URL:?DEMO_URL is required}"
+
+          FTP_PORT=${FTP_PORT:-22}
+          [[ "$FTP_PORT" == '22' ]]
+          [[ "$FTP_SERVER" =~ ^[A-Za-z0-9.-]+$ ]]
+          [[ "$FTP_USERNAME" =~ ^[A-Za-z0-9._-]+$ ]]
+          [[ "$FTP_REMOTE_PATH" == '/home/www/chordsheets-demo' ]]
+          [[ "$DEMO_URL" == 'https://chordsheets.pazureck.de' ]]
+
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends sshpass
+
+          install -d -m 0700 "$HOME/.ssh"
+          printf '%s\n' "$FTP_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 0600 "$HOME/.ssh/known_hosts"
+
+          ssh_options=(
+            -p "$FTP_PORT"
+            -o BatchMode=no
+            -o PreferredAuthentications=password
+            -o PubkeyAuthentication=no
+            -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
+            -o GlobalKnownHostsFile=/dev/null
+          )
+
+          release_archive="$RUNNER_TEMP/dokuwiki-chordsheets-demo.zip"
+          archive_sha256=$(sha256sum "$release_archive" | awk '{print $1}')
+
+          remote_archive=$(sshpass -e ssh "${ssh_options[@]}" \
+            "$FTP_USERNAME@$FTP_SERVER" \
+            "set -euo pipefail; umask 0077; mkdir -p '$FTP_REMOTE_PATH'; test -d '$FTP_REMOTE_PATH'; test ! -L '$FTP_REMOTE_PATH'; test \"\$(realpath -e '$FTP_REMOTE_PATH')\" = '$FTP_REMOTE_PATH'; mkdir -p '$FTP_REMOTE_PATH/uploads'; test -d '$FTP_REMOTE_PATH/uploads'; test ! -L '$FTP_REMOTE_PATH/uploads'; test \"\$(realpath -e '$FTP_REMOTE_PATH/uploads')\" = '$FTP_REMOTE_PATH/uploads'; chmod 0700 '$FTP_REMOTE_PATH/uploads'; mktemp '$FTP_REMOTE_PATH/uploads/.upload.$GITHUB_SHA.XXXXXX'")
+          [[ "$remote_archive" =~ ^/home/www/chordsheets-demo/uploads/\.upload\.$GITHUB_SHA\.[A-Za-z0-9]{6}$ ]]
+          upload_name=${remote_archive##*/}
+
+          sshpass -e scp \
+            -P "$FTP_PORT" \
+            -o BatchMode=no \
+            -o PreferredAuthentications=password \
+            -o PubkeyAuthentication=no \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            -o GlobalKnownHostsFile=/dev/null \
+            "$release_archive" \
+            "$FTP_USERNAME@$FTP_SERVER:$remote_archive"
+
+          sshpass -e ssh "${ssh_options[@]}" \
+            "$FTP_USERNAME@$FTP_SERVER" \
+            "bash -s -- '$FTP_REMOTE_PATH' '$GITHUB_SHA' '$archive_sha256' '$upload_name'" \
+            < deployment/remote-deploy.sh
+
+          smoke_failed=0
+          curl --fail --silent --show-error \
+            "$DEMO_URL/doku.php?id=start" \
+            | grep --fixed-strings 'DokuWiki Chordsheets Demo' \
+            >/dev/null || smoke_failed=1
+
+          curl --fail --silent --show-error \
+            "$DEMO_URL/lib/plugins/chordsheets/script.js" \
+            >/dev/null || smoke_failed=1
+
+          protected_paths=(
+            '/install.php'
+            '/conf/'
+            '/conf/local.php'
+            '/conf/users.auth.php'
+            '/conf/acl.auth.php'
+            '/data/'
+            '/data/pages/start.txt'
+          )
+
+          for protected_path in "${protected_paths[@]}"; do
+            status=$(curl --silent --show-error --output /dev/null \
+              --write-out '%{http_code}' \
+              "$DEMO_URL$protected_path") || status=000
+            [[ "$status" == '403' || "$status" == '404' ]] || smoke_failed=1
+          done
+
+          redirect_result=$(curl --silent --show-error --output /dev/null \
+            --write-out '%{http_code} %{redirect_url}' \
+            'http://chordsheets.pazureck.de/') || redirect_result='000'
+          [[ "$redirect_result" =~ ^30[1278]\ https://chordsheets\.pazureck\.de/ ]] || smoke_failed=1
+
+          if [[ "$smoke_failed" -ne 0 ]]; then
+            expected_rollback=$(sshpass -e ssh "${ssh_options[@]}" \
+              "$FTP_USERNAME@$FTP_SERVER" \
+              "if [[ -L '$FTP_REMOTE_PATH/previous' ]]; then readlink '$FTP_REMOTE_PATH/previous'; else printf inactive; fi")
+            [[ "$expected_rollback" == 'inactive' || "$expected_rollback" =~ ^releases/[a-f0-9]{40}$ ]]
+
+            sshpass -e ssh "${ssh_options[@]}" \
+              "$FTP_USERNAME@$FTP_SERVER" \
+              "bash -s -- '$FTP_REMOTE_PATH' '$GITHUB_SHA'" \
+              < deployment/remote-rollback.sh
+
+            rollback_state=$(sshpass -e ssh "${ssh_options[@]}" \
+              "$FTP_USERNAME@$FTP_SERVER" \
+              "if [[ -L '$FTP_REMOTE_PATH/current' ]]; then printf active; else printf inactive; fi")
+            rollback_verification_failed=0
+
+            for protected_path in "${protected_paths[@]}"; do
+              status=$(curl --silent --show-error --output /dev/null \
+                --write-out '%{http_code}' \
+                "$DEMO_URL$protected_path") || status=000
+              [[ "$status" == '403' || "$status" == '404' ]] || rollback_verification_failed=1
+            done
+
+            if [[ "$rollback_state" == 'active' ]]; then
+              [[ "$expected_rollback" =~ ^releases/[a-f0-9]{40}$ ]] || rollback_verification_failed=1
+              curl --fail --silent --show-error \
+                "$DEMO_URL/doku.php?id=start" \
+                | grep --fixed-strings 'DokuWiki Chordsheets Demo' \
+                >/dev/null || rollback_verification_failed=1
+              curl --fail --silent --show-error \
+                "$DEMO_URL/lib/plugins/chordsheets/script.js" \
+                >/dev/null || rollback_verification_failed=1
+            elif [[ "$rollback_state" == 'inactive' ]]; then
+              [[ "$expected_rollback" == 'inactive' ]] || rollback_verification_failed=1
+            else
+              rollback_verification_failed=1
+            fi
+
+            if [[ "$rollback_verification_failed" -ne 0 ]]; then
+              if [[ "$rollback_state" == 'active' && "$expected_rollback" =~ ^releases/[a-f0-9]{40}$ ]]; then
+                rollback_sha=${expected_rollback#releases/}
+                sshpass -e ssh "${ssh_options[@]}" \
+                  "$FTP_USERNAME@$FTP_SERVER" \
+                  "bash -s -- '$FTP_REMOTE_PATH' '$rollback_sha'" \
+                  < deployment/remote-deactivate.sh
+              fi
+
+              post_deactivate_state=$(sshpass -e ssh "${ssh_options[@]}" \
+                "$FTP_USERNAME@$FTP_SERVER" \
+                "if [[ -L '$FTP_REMOTE_PATH/current' ]]; then printf active; else printf inactive; fi")
+              [[ "$post_deactivate_state" == 'inactive' ]]
+              echo 'Rollback verification failed; the unverified release was deactivated.' >&2
+              exit 1
+            fi
+
+            echo 'Remote smoke test failed; rollback completed.' >&2
+            exit 1
+          fi
+
+          echo "Demo ZIP deployment succeeded for $GITHUB_SHA."
