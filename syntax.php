@@ -32,13 +32,27 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
     public function handle($match, $state, $pos, Doku_Handler $handler){
         switch ($state) {
           case DOKU_LEXER_ENTER :
+                $transpose  = 0;
+                $instrument = 'guitar';
+
                 $re = '/^<chordSheet.*?([-+]?\d+)>/';
-                $transpose = 0;
                 preg_match($re, $match, $matches, PREG_OFFSET_CAPTURE, 0);
-                if(count($matches) > 0) {
-                    $transpose = $matches[1];
+                if (count($matches) > 0) {
+                    $transpose = $matches[1][0];
                 }
-                return array($state, $transpose);
+
+                $re_inst = '/\binstrument=["\']?([a-zA-Z]+)["\']?/i';
+                preg_match($re_inst, $match, $inst_matches);
+                if (count($inst_matches) > 0) {
+                    // only allow known instruments to avoid XSS via attribute injection
+                    $allowed = array('guitar', 'ukulele');
+                    $val = strtolower($inst_matches[1]);
+                    if (in_array($val, $allowed)) {
+                        $instrument = $val;
+                    }
+                }
+
+                return array($state, array($transpose, $instrument));
  
           case DOKU_LEXER_UNMATCHED :  return array($state, $match);
           case DOKU_LEXER_EXIT :       return array($state, '');
@@ -56,11 +70,11 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
             /** @var Doku_Renderer_xhtml $renderer */
             list($state,$match) = $data;
             switch ($state) {
-                case DOKU_LEXER_ENTER :      
-                    list($transpose) = $match;
+                case DOKU_LEXER_ENTER :
+                    list($transpose, $instrument) = $match;
                     $id = mt_rand();
                     $renderer->doc .= '<div class="cSheetButtonBar"><span class=cSheetButtons><button onclick="cSheetExportToWord('.$id.')">Export to Word</button></span></div>';
-                    $renderer->doc .= '<div class="song-with-chords" id="'.$id.'" data-transpose="'.$transpose.'">';
+                    $renderer->doc .= '<div class="song-with-chords" id="'.$id.'" data-transpose="'.((int)$transpose).'" data-instrument="'.htmlspecialchars($instrument, ENT_QUOTES, 'UTF-8').'">';
                     break;
                 case DOKU_LEXER_UNMATCHED :  
                     $renderer->doc .= $renderer->_xmlEntities($match); 

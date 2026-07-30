@@ -53,6 +53,11 @@
   height:100px;
 }
 
+/* Ukulele chord diagrams — same height as guitar (4 frets × 16px + margins) */
+.jtab-ukulele {
+    height: 118px;
+}
+
 .tooltip {
     position: relative;
     display: inline-block;
@@ -98,7 +103,8 @@
     opacity: .9;
 }
 
-span.jtab svg {
+span.jtab svg,
+span.jtab-ukulele svg {
   width: auto;
   height: auto;
 }
