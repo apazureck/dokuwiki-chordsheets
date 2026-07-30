@@ -1,0 +1,135 @@
+~~NOTOC~~
+====== DokuWiki Chordsheets ======
+
+{{:wiki:logo.png?220|DokuWiki Chordsheets logo}}
+
+**Turn plain-text chord charts into interactive song sheets.**
+
+Keep the simplicity of DokuWiki markup while giving musicians readable sections, chord diagrams, transposition, and an export-friendly layout.
+
+> [[#live_demo|Explore the live examples]] · [[#installation|Install the plugin]] · [[https://github.com/apazureck/dokuwiki-chordsheets|View the project on GitHub]]
+
+===== Play it, don't just document it =====
+
+The plugin keeps songs easy to edit and pleasant to use during rehearsal, lessons, or a gig.
+
+  * **Chord diagrams on demand** — Hover a highlighted chord or focus it with the keyboard to see its fingering.
+  * **Transpose while publishing** — Shift a complete sheet by semitones without rewriting every chord.
+  * **Readable song sections** — Intro, verse, chorus, bridge, and refrain remain easy to scan.
+  * **Export-friendly output** — Copy the rendered song into a document when you need a printable handout.
+
+===== Live demo =====
+
+These short examples use original demo lyrics. Try the highlighted chords and compare the original progression with its transposed version.
+
+==== Example 1 — A simple campfire progression ====
+
+<chordSheet 0>
+[Intro]
+Am    F     C     G
+
+[Verse]
+C
+Morning finds the open road
+G
+Every mile becomes a note
+Am
+Carry the rhythm, travel light
+F                         C
+Sing the map into the night
+
+[Chorus]
+F               C
+Pages turn and voices rise
+G                     Am
+Chords are waiting between the lines
+</chordSheet>
+
+**Try it:** Hover or focus //Am//, //F//, //C//, or //G// to open the chord diagram.
+
+==== Example 2 — The same idea, two semitones higher ====
+
+The number in the opening tag is the transposition in semitones. Negative numbers transpose down.
+
+<chordSheet 2>
+[Intro]
+Am    F     C     G
+
+[Verse]
+C
+Write it once and change the key
+G
+Keep the song easy to read
+Am
+Every chord moves as a set
+F                         C
+No manual rewriting or regret
+</chordSheet>
+
+==== Example 3 — Extended and slash chords ====
+
+<chordSheet 0>
+[Verse]
+Cmaj7        G/B
+Leave a little room to breathe
+Am7          Fadd9
+Color every line with harmony
+
+[Bridge]
+Dm7          G7
+Turn the page and count us in
+Cmaj7
+Let the next refrain begin
+</chordSheet>
+
+===== Write your first sheet =====
+
+Wrap a plain-text song in ''chordSheet'' tags. Put chords on their own lines and use square brackets for section names.
+
+<code xml>
+<chordSheet 0>
+[Intro]
+Am    F     C     G
+
+[Verse]
+C
+Your lyric line goes here
+G
+The next line follows the chords
+</chordSheet>
+</code>
+
+  * ''<chordSheet 0>'' keeps the original key.
+  * ''<chordSheet 2>'' transposes up two semitones; ''-2'' transposes down.
+  * ''[Verse]'', ''[Chorus]'', and other bracketed labels create visible sections.
+  * Chord-only lines are recognized automatically and keep their spacing.
+
+===== Installation =====
+
+  - [[https://github.com/apazureck/dokuwiki-chordsheets/archive/refs/heads/master.zip|Download the current project ZIP]].
+  - Extract it and rename the extracted directory to exactly ''chordsheets''.
+  - Copy that directory to ''lib/plugins/chordsheets/'' inside your DokuWiki installation.
+  - Open any wiki page, add a ''<chordSheet>'' block, and save.
+
+The resulting plugin path must look like this:
+
+<code>
+lib/
+└── plugins/
+    └── chordsheets/
+        ├── syntax.php
+        ├── script.js
+        ├── style.css
+        └── plugin.info.txt
+</code>
+
+For general extension administration, see the [[https://www.dokuwiki.org/plugins|official DokuWiki plugin documentation]].
+
+===== Project & roadmap =====
+
+  * [[https://github.com/apazureck/dokuwiki-chordsheets|Source code and documentation]]
+  * [[https://github.com/apazureck/dokuwiki-chordsheets/issues|Bug reports and feature requests]]
+  * [[https://github.com/apazureck/dokuwiki-chordsheets/issues/7|Roadmap: ukulele chord support]]
+  * [[https://www.dokuwiki.org/|About DokuWiki]]
+
+The project is open source under the [[https://github.com/apazureck/dokuwiki-chordsheets/blob/master/LICENSE|GNU General Public License v2.0]].

@@ -1,0 +1,51 @@
+name: Plugin CI
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+  schedule:
+    - cron: '23 4 1 * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plugin-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Lint PHP
+        shell: bash
+        run: |
+          php -l syntax.php
+          php ./_test/syntax-postconnect.test.php
+
+      - name: Run JavaScript unit tests
+        run: node --test ./_test/script.test.js
+
+      - name: Run release policy and package tests
+        shell: pwsh
+        run: |
+          ./release/tests/registry-handoff.test.ps1
+          ./release/tests/release-workflow-policy.test.ps1
+          ./release/tests/plugin-package.test.ps1
+
+      - name: Run local DokuWiki smoke test
+        shell: pwsh
+        run: |
+          try {
+            ./docker/smoke-test.ps1
+          } finally {
+            docker compose down --volumes
+          }

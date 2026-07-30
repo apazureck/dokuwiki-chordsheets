@@ -1,0 +1,132 @@
+name: Publish plugin release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plugin-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: release
+      url: ${{ steps.publish.outputs.url }}
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.ref }}
+          persist-credentials: false
+
+      - name: Validate semantic version tag
+        id: version
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') {
+            throw "Refusing non-semantic release tag: $env:RELEASE_TAG"
+          }
+          "version=$($env:RELEASE_TAG.Substring(1))" >> $env:GITHUB_OUTPUT
+
+      - name: Lint and test source
+        shell: pwsh
+        run: |
+          php -l ./syntax.php
+          php ./_test/syntax-postconnect.test.php
+          node --test ./_test/script.test.js
+          ./release/tests/registry-handoff.test.ps1
+          ./release/tests/release-workflow-policy.test.ps1
+
+      - name: Run local DokuWiki smoke test
+        shell: pwsh
+        run: |
+          try {
+            ./docker/smoke-test.ps1
+          } finally {
+            docker compose down --volumes
+          }
+
+      - name: Build verified plugin ZIP
+        id: package
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP (
+            'dokuwiki-plugin-chordsheets-${{ steps.version.outputs.version }}.zip'
+          )
+          ./release/build-plugin-zip.ps1 `
+            -Version '${{ steps.version.outputs.version }}' `
+            -OutputArchive $archive
+          ./release/tests/plugin-package.test.ps1
+          "archive=$archive" >> $env:GITHUB_OUTPUT
+          "checksum=$archive.sha256" >> $env:GITHUB_OUTPUT
+
+      - name: Create SHA-256 checksum
+        shell: bash
+        env:
+          RELEASE_ARCHIVE: ${{ steps.package.outputs.archive }}
+        run: sha256sum "$RELEASE_ARCHIVE" > "$RELEASE_ARCHIVE.sha256"
+
+      - name: Publish immutable GitHub release
+        id: publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ARCHIVE: ${{ steps.package.outputs.archive }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists; refusing to replace it." >&2
+            exit 1
+          fi
+          gh release create "$RELEASE_TAG" \
+            "$RELEASE_ARCHIVE" \
+            "$RELEASE_ARCHIVE.sha256" \
+            --verify-tag \
+            --title "DokuWiki Chordsheets $RELEASE_TAG" \
+            --generate-notes
+          echo "url=$(gh release view "$RELEASE_TAG" --json url --jq .url)" \
+            >> "$GITHUB_OUTPUT"
+
+  registry-handoff:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    environment:
+      name: dokuwiki-registry
+      url: https://www.dokuwiki.org/plugin:chordsheets
+
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.ref }}
+          persist-credentials: false
+
+      - name: Prepare reviewed manual registry handoff
+        shell: bash
+        run: |
+          {
+            echo '## DokuWiki registry handoff'
+            echo
+            echo 'DokuWiki.org has no enabled token API. Log in manually and'
+            echo 'copy the reviewed metadata below into the plugin page.'
+            echo
+            echo '```text'
+            cat release/dokuwiki-registry.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -42,19 +42,38 @@ try {
         throw "DokuWiki returned HTTP $($page.StatusCode)."
     }
 
-    foreach ($marker in @('DokuWiki Chordsheets Test', 'song-with-chords')) {
+    foreach ($marker in @('DokuWiki Chordsheets Demo', 'Live demo', 'Installation', 'song-with-chords')) {
         if ($page.Content -notmatch [regex]::Escape($marker)) {
             throw "Expected marker '$marker' was not found in the rendered start page."
         }
     }
 
-    if ([regex]::Matches($page.Content, 'song-with-chords').Count -lt 2) {
-        throw 'The rendered start page does not contain both test chord sheets.'
+    if ([regex]::Matches($page.Content, 'song-with-chords').Count -lt 3) {
+        throw 'The rendered start page does not contain all interactive examples.'
     }
 
     $rawPage = Invoke-WebRequest -Uri "$baseUrl/doku.php?id=start&do=export_raw" -UseBasicParsing
-    if ($rawPage.Content -notmatch [regex]::Escape('<chordSheet 2 instrument="ukulele">')) {
-        throw 'The ukulele/transposition regression fixture is missing from the start page.'
+    if ($rawPage.Content -notmatch [regex]::Escape('<chordSheet 2>')) {
+        throw 'The transposition example is missing from the start page.'
+    }
+
+    $cssMatch = [regex]::Match(
+        $page.Content,
+        '<link rel="stylesheet" href="([^"]*lib/exe/css\.php[^"]*)"'
+    )
+    if (-not $cssMatch.Success) {
+        throw 'DokuWiki did not publish its compiled stylesheet.'
+    }
+    $cssPath = [System.Net.WebUtility]::HtmlDecode($cssMatch.Groups[1].Value)
+    $css = Invoke-WebRequest -Uri "$baseUrl$cssPath" -UseBasicParsing
+    $hasDemoStyles = $css.Content -match [regex]::Escape('.dokuwiki.home')
+    if (($css.StatusCode -ne 200) -or ($css.Content -match 'fatal error') -or (-not $hasDemoStyles)) {
+        throw 'The demo stylesheet could not be compiled by DokuWiki.'
+    }
+
+    $logo = Invoke-WebRequest -Uri "$baseUrl/lib/exe/fetch.php?media=wiki:logo.png" -UseBasicParsing
+    if ($logo.StatusCode -ne 200 -or $logo.RawContentLength -lt 1024) {
+        throw 'The demo logo is not available from DokuWiki media storage.'
     }
 
     $asset = Invoke-WebRequest -Uri "$baseUrl/lib/plugins/chordsheets/script.js" -UseBasicParsing
