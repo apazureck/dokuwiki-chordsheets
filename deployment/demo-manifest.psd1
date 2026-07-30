@@ -8,6 +8,7 @@
 
     PluginRuntime = @(
         'conf'
+        'demo'
         'img'
         'js'
         'plugin.info.txt'

@@ -63,6 +63,10 @@ jobs:
           ./deployment/tests/php-web-deploy-policy.test.ps1
           ./deployment/tests/webgo-chroot-policy.test.ps1
           ./deployment/tests/webroot-discovery-policy.test.ps1
+          ./deployment/tests/demo-landing-page.test.ps1
+
+      - name: Run JavaScript unit tests
+        run: node --test ./_test/script.test.js
 
       - name: Test PHP web deployment and rollback
         shell: bash

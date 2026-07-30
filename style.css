@@ -102,3 +102,376 @@ span.jtab svg {
   width: auto;
   height: auto;
 }
+
+/* Polished chord-sheet surface */
+.song-with-chords {
+  background: #fffdf6;
+  border: 1px solid #ddd5c2;
+  border-radius: 0.9rem;
+  box-shadow: 0 0.65rem 1.8rem rgba(34, 43, 38, 0.08);
+  color: #26312b;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  line-height: 1.65;
+  overflow-x: auto;
+  padding: clamp(1rem, 3vw, 1.8rem);
+}
+
+.song-chord {
+  color: #c94f2d;
+  cursor: help;
+  font-weight: 800;
+  text-decoration: underline dotted rgba(201, 79, 45, 0.55);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.2em;
+}
+
+.song-chord:hover,
+.song-chord:focus {
+  background: #f9e4d9;
+  border-radius: 0.2rem;
+  color: #94391f;
+  outline: none;
+}
+
+.song-chord:focus-visible,
+.cSheetButtons button:focus-visible,
+.dokuwiki.home a:focus-visible {
+  outline: 3px solid #196f78;
+  outline-offset: 3px;
+}
+
+.song-chordLine,
+.song-textLine {
+  line-height: 1.7;
+}
+
+.song-section {
+  border-left: 0.25rem solid #6ea653;
+  margin-top: 1.25rem;
+  padding-left: 0.9rem;
+}
+
+.song-section-heading {
+  color: #405347;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  margin: 0 0 0.6rem;
+  text-transform: uppercase;
+}
+
+.song-section.chorus,
+.song-section.refrain {
+  background: #fff2d7;
+  border-left-color: #ee6736;
+  border-radius: 0 0.7rem 0.7rem 0;
+  padding: 0.85rem 1rem;
+}
+
+.cSheetButtonBar {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0.5rem 0;
+  text-align: initial;
+}
+
+.cSheetButtons {
+  background: transparent;
+  padding: 0;
+}
+
+.cSheetButtons button {
+  align-items: center;
+  background: #28372f;
+  border: 2px solid #28372f;
+  border-radius: 999px;
+  color: #fffdf6;
+  cursor: pointer;
+  display: inline-flex;
+  font: 700 0.9rem/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.cSheetButtons button:hover {
+  background: #41604d;
+  border-color: #41604d;
+  transform: translateY(-1px);
+}
+
+.tooltip .tooltiptext {
+  bottom: auto;
+  border: 1px solid #ddd5c2;
+  box-shadow: 0 0.75rem 2rem rgba(34, 43, 38, 0.18);
+  left: 0;
+  margin-left: 0;
+  min-width: 8.5rem;
+  padding: 0.55rem;
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  transform: none;
+  z-index: 10000;
+}
+
+.tooltip .tooltiptext[data-placement="bottom"]::after {
+  border-color: transparent transparent #555;
+  bottom: 100%;
+  top: auto;
+}
+
+.tooltip:hover .tooltiptext,
+.tooltip:focus .tooltiptext {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Demo landing page — scoped so plugin installations keep their own theme. */
+.dokuwiki.home {
+  --demo-ink: #243129;
+  --demo-muted: #607067;
+  --demo-paper: #fffdf6;
+  --demo-canvas: #eee7d7;
+  --demo-line: #ded5c1;
+  --demo-green: #639c4d;
+  --demo-green-dark: #315d3c;
+  --demo-orange: #ec6435;
+  color: var(--demo-ink);
+  max-width: 88rem;
+}
+
+.dokuwiki.home #dokuwiki__header {
+  border-bottom: 1px solid var(--demo-line);
+}
+
+.dokuwiki.home #dokuwiki__header h1.logo img {
+  height: 3.25rem;
+  object-fit: contain;
+  width: 3.25rem;
+}
+
+.dokuwiki.home #dokuwiki__content > .pad {
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+}
+
+.dokuwiki.home #dokuwiki__content .pageId {
+  display: none;
+}
+
+.dokuwiki.home #dokuwiki__content .page {
+  background: var(--demo-paper);
+  border: 1px solid var(--demo-line);
+  border-radius: 1.25rem;
+  box-shadow: 0 1.4rem 3.5rem rgba(40, 55, 47, 0.12);
+  margin: 0 auto;
+  max-width: 72rem;
+  overflow: hidden;
+  padding: clamp(1.25rem, 4vw, 4rem);
+  position: relative;
+}
+
+.dokuwiki.home #dokuwiki__content .page::before {
+  background: linear-gradient(90deg, var(--demo-green) 0 62%, var(--demo-orange) 62% 100%);
+  content: "";
+  height: 0.4rem;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.dokuwiki.home #dokuwiki__content h1#dokuwiki_chordsheets {
+  border: 0;
+  color: var(--demo-ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 4.2rem;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+  margin: 1rem auto 0;
+  max-width: 14ch;
+  padding: 0;
+  text-align: center;
+}
+
+.dokuwiki.home #dokuwiki__content h1#dokuwiki_chordsheets + .level1 {
+  margin: 0 auto;
+  max-width: 52rem;
+  text-align: center;
+}
+
+.dokuwiki.home #dokuwiki__content h1#dokuwiki_chordsheets + .level1 > p:first-child img {
+  height: auto;
+  margin: 1.2rem auto 0.5rem;
+  max-width: 13.75rem;
+  width: 52vw;
+}
+
+.dokuwiki.home #dokuwiki__content h1#dokuwiki_chordsheets + .level1 > p:nth-child(2) {
+  color: var(--demo-green-dark);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  line-height: 1.3;
+}
+
+.dokuwiki.home #dokuwiki__content h1#dokuwiki_chordsheets + .level1 > p:nth-child(3) {
+  color: var(--demo-muted);
+  font-size: 1.05rem;
+  line-height: 1.75;
+  margin-inline: auto;
+  max-width: 44rem;
+}
+
+.dokuwiki.home #dokuwiki__content h1#dokuwiki_chordsheets + .level1 blockquote {
+  background: #f4efdf;
+  border: 0;
+  border-radius: 999px;
+  margin: 1.6rem auto 0;
+  padding: 0.8rem 1.2rem;
+  width: fit-content;
+}
+
+.dokuwiki.home #dokuwiki__content h1#dokuwiki_chordsheets + .level1 blockquote a {
+  color: var(--demo-green-dark);
+  font-weight: 750;
+  text-decoration-thickness: 0.1em;
+  text-underline-offset: 0.2em;
+}
+
+.dokuwiki.home #dokuwiki__content h2 {
+  border: 0;
+  color: var(--demo-ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.65rem, 4vw, 2.45rem);
+  letter-spacing: -0.025em;
+  margin: clamp(3.25rem, 7vw, 5.5rem) 0 0.5rem;
+  padding: 0;
+}
+
+.dokuwiki.home #dokuwiki__content h3 {
+  border: 0;
+  color: var(--demo-green-dark);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 1.15rem;
+  margin-top: 2.4rem;
+}
+
+.dokuwiki.home #dokuwiki__content .level2 > p {
+  color: var(--demo-muted);
+  font-size: 1rem;
+  line-height: 1.75;
+  max-width: 48rem;
+}
+
+.dokuwiki.home h2#play_it_don_t_just_document_it + .level2 > ul,
+.dokuwiki.home h2#project_roadmap + .level2 > ul {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 1.5rem 0 0;
+  padding: 0;
+}
+
+.dokuwiki.home h2#play_it_don_t_just_document_it + .level2 > ul > li,
+.dokuwiki.home h2#project_roadmap + .level2 > ul > li {
+  background: #f5f0e2;
+  border: 1px solid var(--demo-line);
+  border-radius: 0.85rem;
+  list-style: none;
+  margin: 0;
+  padding: 1rem 1.1rem;
+}
+
+.dokuwiki.home h2#installation + .level2 > ol {
+  counter-reset: demo-step;
+  display: grid;
+  gap: 0.85rem;
+  margin: 1.4rem 0;
+  padding: 0;
+}
+
+.dokuwiki.home h2#installation + .level2 > ol > li {
+  align-items: start;
+  background: #f5f0e2;
+  border-radius: 0.75rem;
+  counter-increment: demo-step;
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: 2rem 1fr;
+  list-style: none;
+  margin: 0;
+  padding: 0.9rem 1rem;
+}
+
+.dokuwiki.home h2#installation + .level2 > ol > li::before {
+  align-items: center;
+  background: var(--demo-green-dark);
+  border-radius: 50%;
+  color: #fff;
+  content: counter(demo-step);
+  display: inline-flex;
+  font-weight: 800;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.dokuwiki.home #dokuwiki__content pre.code {
+  background: #202c25;
+  border: 0;
+  border-radius: 0.8rem;
+  color: #f9f3e4;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  margin: 1.2rem 0;
+  overflow-x: auto;
+  padding: 1.15rem;
+}
+
+.dokuwiki.home #dokuwiki__content a {
+  color: #2e6840;
+  text-decoration-color: rgba(46, 104, 64, 0.45);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.17em;
+}
+
+.dokuwiki.home #dokuwiki__content a:hover {
+  color: #b54527;
+}
+
+@media (max-width: 48rem) {
+  .dokuwiki.home #dokuwiki__content .page {
+    border-left: 0;
+    border-radius: 0;
+    border-right: 0;
+    padding: 1.1rem;
+  }
+
+  .dokuwiki.home #dokuwiki__content h1#dokuwiki_chordsheets {
+    font-size: 2.45rem;
+    line-height: 1.05;
+  }
+
+  .dokuwiki.home #dokuwiki__content h1#dokuwiki_chordsheets + .level1 blockquote {
+    border-radius: 0.8rem;
+    line-height: 2;
+    width: auto;
+  }
+
+  .dokuwiki.home h2#play_it_don_t_just_document_it + .level2 > ul,
+  .dokuwiki.home h2#project_roadmap + .level2 > ul {
+    grid-template-columns: 1fr;
+  }
+
+  .song-with-chords {
+    font-size: 0.88rem;
+    padding: 0.9rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cSheetButtons button {
+    transition: none;
+  }
+}

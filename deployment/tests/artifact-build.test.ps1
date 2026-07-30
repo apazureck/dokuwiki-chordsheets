@@ -77,6 +77,8 @@ try {
     Assert-ArchiveEntry $entries 'lib/plugins/chordsheets/plugin.info.txt'
     Assert-ArchiveEntry $entries 'lib/plugins/chordsheets/conf/default.php'
     Assert-ArchiveEntry $entries 'lib/plugins/chordsheets/conf/metadata.php'
+    Assert-ArchiveEntry $entries 'lib/plugins/chordsheets/demo/start.txt'
+    Assert-ArchiveEntry $entries 'lib/plugins/chordsheets/img/chordsheets-logo.png'
 
     $forbiddenPatterns = @(
         'install.php',

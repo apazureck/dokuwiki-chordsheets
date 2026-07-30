@@ -2,7 +2,7 @@
 /**
  * DokuWiki Plugin chordsheets (Syntax Component)
  *
- * @license MIT
+ * @license GPL-2.0-or-later
  * @author  Andreas Pazureck <andreas@pazureck.de>
  */
 
@@ -23,7 +23,7 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
     public function postConnect()
     {
         $this->Lexer->addExitPattern('</chordSheet>','plugin_chordsheets');
-        $this->Lexer->addPattern('%.*?\[\w+\]', $mode,'plugin_chordsheets');
+        $this->Lexer->addPattern('%.*?\[\w+\]', 'plugin_chordsheets');
     }
  
     /**
@@ -59,7 +59,7 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
                 case DOKU_LEXER_ENTER :      
                     list($transpose) = $match;
                     $id = mt_rand();
-                    $renderer->doc .= '<div class="cSheetButtonBar"><span class=cSheetButtons><button onclick="cSheetExportToWord('.$id.')">Export to Word</button></span></div>';
+                    $renderer->doc .= '<div class="cSheetButtonBar"><span class="cSheetButtons"><button type="button" class="cSheetExportButton" onclick="cSheetExportToWord('.$id.')" aria-label="Copy this chord sheet for use in a document">Copy for Word</button></span></div>';
                     $renderer->doc .= '<div class="song-with-chords" id="'.$id.'" data-transpose="'.$transpose.'">';
                     break;
                 case DOKU_LEXER_UNMATCHED :  

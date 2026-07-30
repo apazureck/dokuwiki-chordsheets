@@ -8,15 +8,24 @@ services:
     entrypoint: ["/bin/sh", "-eu", "-c"]
     command:
       - |
-        mkdir -p /storage/conf /storage/data/pages /storage/lib/plugins
+        mkdir -p /storage/conf /storage/data/pages /storage/data/media/wiki /storage/lib/plugins
         cp /seed/local.php /storage/conf/local.php
-        cp /seed/start.txt /storage/data/pages/start.txt
+        cp /demo-seed/start.txt /storage/data/pages/start.txt
+        cp /plugin-images/chordsheets-logo.png /storage/data/media/wiki/logo.png
         chown -R 1000:1000 /storage
     volumes:
       - dokuwiki-data:/storage
       - type: bind
         source: ./docker/dokuwiki
         target: /seed
+        read_only: true
+      - type: bind
+        source: ./demo
+        target: /demo-seed
+        read_only: true
+      - type: bind
+        source: ./img
+        target: /plugin-images
         read_only: true
     security_opt:
       - no-new-privileges:true

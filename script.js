@@ -5,6 +5,7 @@ function ready() {
     "use strict";
     runSongHighlighter();
     jtab.renderimplicit(null);
+    bindChordTooltips();
 }
 
 var songBlockSelector = "song-with-chords";
@@ -13,6 +14,73 @@ var songSectionSelector = "song-section";
 var songSectionHeadingSelector = "song-section-heading";
 var chordLineSelector = "song-chordLine";
 var songTextLineSelector = "song-textLine";
+
+function calculateChordTooltipPosition(chordRect, tooltipRect, viewport, options) {
+    "use strict";
+    options = options || {};
+
+    var gap = options.gap || 8;
+    var gutter = options.gutter || 8;
+    var preferredTop = chordRect.top - tooltipRect.height - gap;
+    var placement = preferredTop < gutter ? "bottom" : "top";
+    var top = placement === "bottom" ? chordRect.bottom + gap : preferredTop;
+    var centeredLeft = chordRect.left + (chordRect.width / 2) - (tooltipRect.width / 2);
+    var maximumLeft = Math.max(gutter, viewport.width - tooltipRect.width - gutter);
+    var maximumTop = Math.max(gutter, viewport.height - tooltipRect.height - gutter);
+
+    return {
+        left: Math.min(Math.max(centeredLeft, gutter), maximumLeft),
+        top: Math.min(Math.max(top, gutter), maximumTop),
+        placement: placement
+    };
+}
+
+function positionChordTooltip(chord) {
+    "use strict";
+    var tooltip = chord.querySelector(".tooltiptext");
+    if (!tooltip) {
+        return;
+    }
+
+    var position = calculateChordTooltipPosition(
+        chord.getBoundingClientRect(),
+        tooltip.getBoundingClientRect(),
+        {
+            width: document.documentElement.clientWidth,
+            height: document.documentElement.clientHeight
+        }
+    );
+
+    tooltip.style.left = position.left + "px";
+    tooltip.style.top = position.top + "px";
+    tooltip.dataset.placement = position.placement;
+}
+
+function bindChordTooltips() {
+    "use strict";
+    var chords = document.querySelectorAll("." + songChordSelector + ".tooltip");
+
+    for (var i = 0; i < chords.length; i++) {
+        chords[i].addEventListener("mouseenter", function (event) {
+            positionChordTooltip(event.currentTarget);
+        });
+        chords[i].addEventListener("focus", function (event) {
+            positionChordTooltip(event.currentTarget);
+        });
+    }
+
+    function repositionVisibleTooltip() {
+        var activeChord = document.querySelector(
+            "." + songChordSelector + ".tooltip:hover, ." + songChordSelector + ".tooltip:focus"
+        );
+        if (activeChord) {
+            positionChordTooltip(activeChord);
+        }
+    }
+
+    window.addEventListener("resize", repositionVisibleTooltip);
+    window.addEventListener("scroll", repositionVisibleTooltip, true);
+}
 
 function parseSong(songText, transpose, showToolTips) {
     "use strict";
@@ -87,7 +155,7 @@ function parseSong(songText, transpose, showToolTips) {
                 }
                 var newChord = subchords.join("/");
                 if (addTooltip)
-                    newLine += chordMatch[0].replace(chordMatch[2], '<span class="' + songChordSelector + ' tooltip">' + newChord + '<span class="tooltiptext jtab">' + subchords[0] + '</span></span>');
+                    newLine += chordMatch[0].replace(chordMatch[2], '<span class="' + songChordSelector + ' tooltip" tabindex="0">' + newChord + '<span class="tooltiptext jtab" aria-hidden="true">' + subchords[0] + '</span></span>');
                 else
                     newLine += chordMatch[0].replace(chordMatch[2], '<span class="' + songChordSelector + '">' + newChord + '</span>');
             }

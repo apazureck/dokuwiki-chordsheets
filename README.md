@@ -1,5 +1,7 @@
 # chordsheets Plugin for DokuWiki
 
+![DokuWiki Chordsheets logo](img/chordsheets-logo.png)
+
 Pretty and interactive chord sheets like on ultimate guitar for dokuwiki
 
 All documentation for this plugin can be found at

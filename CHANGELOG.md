@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-30
+
+### Added
+
+* Local Docker-based DokuWiki setup and smoke tests.
+* A public demo site with installation guidance and examples.
+* Reproducible, verified plugin ZIP packaging and protected release environments.
+
+### Fixed
+
+* Chord diagrams are rendered in a viewport-level tooltip so parent containers no longer clip them.
+* Tooltips flip below the chord when there is not enough room above it.
+* Lexer registration no longer references an undefined `$mode` variable.
+
 ## [0.1.2] - 2025-08-11
 
 ### Fixed

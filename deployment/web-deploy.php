@@ -316,21 +316,31 @@ function chordsheetsDeployPrepareShared(string $root, string $staging, string $s
                 chordsheetsDeployFail('Could not initialize shared wiki data.', 500);
             }
         }
-        chordsheetsDeployWriteFile(
-            "$sharedData/pages/start.txt",
-            "====== DokuWiki Chordsheets Demo ======\n\n"
-            . "This instance runs the current chordsheets plugin from GitHub.\n\n"
-            . "<chordSheet>\n[C]Hello [G]world\n[Am]This is the [F]guitar demo\n</chordSheet>\n\n"
-            . "<chordSheet instrument=\"ukulele\">\n[C]Ukulele [G]preview\n</chordSheet>\n"
-        );
     } elseif (is_link($sharedData)) {
         chordsheetsDeployFail('Shared data path is unsafe.', 500);
     }
+
+    $demoPage = "$staging/lib/plugins/chordsheets/demo/start.txt";
+    $demoLogo = "$staging/lib/plugins/chordsheets/img/chordsheets-logo.png";
+    $demoPageContents = is_file($demoPage) ? file_get_contents($demoPage) : false;
+    if (!is_string($demoPageContents) || !is_file($demoLogo)) {
+        chordsheetsDeployFail('Demo website assets are missing.', 500);
+    }
+    if (!is_dir("$sharedData/media/wiki")
+        && !mkdir("$sharedData/media/wiki", 0700, true)) {
+        chordsheetsDeployFail('Could not initialize demo media storage.', 500);
+    }
+    chordsheetsDeployWriteFile("$sharedData/pages/start.txt", $demoPageContents);
+    if (!copy($demoLogo, "$sharedData/media/wiki/logo.png")) {
+        chordsheetsDeployFail('Could not publish the demo logo.', 500);
+    }
+    chmod("$sharedData/media/wiki/logo.png", 0600);
 
     chordsheetsDeployWriteFile(
         "$sharedConf/local.php",
         "<?php\n"
         . "\$conf['title'] = 'DokuWiki Chordsheets Demo';\n"
+        . "\$conf['tagline'] = 'Interactive chord sheets for DokuWiki';\n"
         . "\$conf['lang'] = 'en';\n"
         . "\$conf['license'] = 'cc-by-sa';\n"
         . "\$conf['useacl'] = 1;\n"
@@ -338,7 +348,7 @@ function chordsheetsDeployPrepareShared(string $root, string $staging, string $s
         . "\$conf['authtype'] = 'authplain';\n"
         . "\$conf['disableactions'] = 'register';\n"
         . "\$conf['breadcrumbs'] = 0;\n"
-        . "\$conf['youarehere'] = 1;\n"
+        . "\$conf['youarehere'] = 0;\n"
     );
     chordsheetsDeployWriteFile(
         "$sharedConf/acl.auth.php",

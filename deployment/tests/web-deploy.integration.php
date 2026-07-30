@@ -40,6 +40,8 @@ function testCreateArchive(string $archivePath, string $label, ?string $sourceAr
     $zip->addFromString('inc/init.php', "<?php\n");
     $zip->addFromString('lib/plugins/chordsheets/syntax.php', "<?php\n");
     $zip->addFromString('lib/plugins/chordsheets/script.js', "console.log('demo');\n");
+    $zip->addFromString('lib/plugins/chordsheets/demo/start.txt', "====== DokuWiki Chordsheets ======\n");
+    $zip->addFromString('lib/plugins/chordsheets/img/chordsheets-logo.png', 'png-fixture');
     $zip->addEmptyDir('conf');
     $zip->close();
     return hash_file('sha256', $archivePath);
@@ -123,6 +125,8 @@ try {
     testAssert(is_file("$current/lib/plugins/chordsheets/syntax.php"), 'Plugin entry point is missing.');
     testAssert(is_file("$root/shared/conf/local.php"), 'Shared local configuration is missing.');
     testAssert(is_file("$root/shared/data/pages/start.txt"), 'Demo start page is missing.');
+    testAssert(str_contains((string) file_get_contents("$root/shared/data/pages/start.txt"), 'DokuWiki Chordsheets'), 'Demo start page content is wrong.');
+    testAssert(is_file("$root/shared/data/media/wiki/logo.png"), 'Demo logo is missing.');
 
     $commit1 = $invalidRequest;
     $commit1['action'] = 'commit';
