@@ -12,6 +12,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function Assert-Metadata {
     param(
@@ -91,18 +92,22 @@ try {
 
     Compress-Archive -LiteralPath $pluginRoot -DestinationPath $archivePath -CompressionLevel Optimal
 
-    $entries = @(& tar -tf $archivePath)
-    if ($LASTEXITCODE -ne 0 -or $entries.Count -eq 0) {
-        throw 'The generated release archive could not be verified.'
-    }
-    foreach ($entry in $entries) {
-        $normalizedEntry = $entry.Replace('\', '/')
-        if (
-            $normalizedEntry -ne "$($manifest.PluginRoot)/" -and
-            -not $normalizedEntry.StartsWith("$($manifest.PluginRoot)/")
-        ) {
-            throw "Archive entry escaped the plugin root: $normalizedEntry"
+    $zipArchive = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
+    try {
+        $entries = @($zipArchive.Entries | ForEach-Object { $_.FullName.Replace('\', '/') })
+        if ($entries.Count -eq 0) {
+            throw 'The generated release archive is empty.'
         }
+        foreach ($normalizedEntry in $entries) {
+            if (
+                $normalizedEntry -ne "$($manifest.PluginRoot)/" -and
+                -not $normalizedEntry.StartsWith("$($manifest.PluginRoot)/")
+            ) {
+                throw "Archive entry escaped the plugin root: $normalizedEntry"
+            }
+        }
+    } finally {
+        $zipArchive.Dispose()
     }
 } catch {
     if (Test-Path -LiteralPath $archivePath) {

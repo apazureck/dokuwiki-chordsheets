@@ -1,5 +1,6 @@
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function Assert-True {
     param(
@@ -31,8 +32,12 @@ try {
 
     Assert-True (Test-Path -LiteralPath $archive -PathType Leaf) 'Plugin release ZIP was not created.'
 
-    $entries = @(& tar -tf $archive)
-    Assert-True ($LASTEXITCODE -eq 0) 'Plugin release ZIP could not be listed.'
+    $zipArchive = [System.IO.Compression.ZipFile]::OpenRead($archive)
+    try {
+        $entries = @($zipArchive.Entries | ForEach-Object { $_.FullName })
+    } finally {
+        $zipArchive.Dispose()
+    }
     Assert-True ($entries.Count -gt 0) 'Plugin release ZIP is empty.'
 
     $normalizedEntries = @($entries | ForEach-Object { $_.Replace('\', '/') })
@@ -79,8 +84,7 @@ try {
     }
 
     New-Item -ItemType Directory -Path $expanded -Force | Out-Null
-    & tar -xf $archive -C $expanded
-    Assert-True ($LASTEXITCODE -eq 0) 'Plugin release ZIP could not be extracted.'
+    [System.IO.Compression.ZipFile]::ExtractToDirectory($archive, $expanded)
 
     $pluginInfo = Get-Content -Raw (Join-Path $expanded 'chordsheets\plugin.info.txt')
     Assert-True ($pluginInfo -match '(?m)^base\s+chordsheets\r?$') 'plugin.info.txt has the wrong base.'
