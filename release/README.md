@@ -1,6 +1,6 @@
 # Release runbook
 
-This directory prepares the `v0.2.0` release. The generated ZIP has exactly one
+This directory prepares the `v1.0.0` release. The generated ZIP has exactly one
 top-level directory, `chordsheets/`, so it can be installed directly through
 DokuWiki's extension manager.
 
@@ -37,7 +37,7 @@ The second environment is deliberately a human approval and handoff boundary.
 Its job summary contains the reviewed registry block from
 `release/dokuwiki-registry.txt`.
 
-## Release v0.2.0
+## Release v1.0.0
 
 The local integration test uses DokuWiki `2026-07-14a "Mort"` and the registry
 metadata also keeps compatibility with the preceding `Librarian` release.
@@ -48,7 +48,7 @@ metadata also keeps compatibility with the preceding `Librarian` release.
    Docker smoke test.
 3. Review the generated ZIP and checksum.
 4. Merge the release preparation, then create and push the signed or annotated
-   tag `v0.2.0`.
+   tag `v1.0.0`.
 5. Approve the `release` environment. The workflow builds the ZIP from the tag,
    creates a GitHub Release, and uploads the ZIP plus SHA-256 checksum.
 6. Approve `dokuwiki-registry`, log in to DokuWiki.org manually, and copy the

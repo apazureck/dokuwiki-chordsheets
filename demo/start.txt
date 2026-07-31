@@ -8,6 +8,12 @@
 Keep the simplicity of DokuWiki markup while giving musicians readable sections, chord diagrams, transposition, and an export-friendly layout.
 
 > [[#live_demo|Explore the live examples]] · [[#installation|Install the plugin]] · [[https://github.com/apazureck/dokuwiki-chordsheets|View the project on GitHub]]
+> **New:** [[#feature_tour|Try the complete feature tour]] with ukulele, inline chords, voicings, tablature, notation, and document export.
+> **Demo administration:** These credentials are for the local test server only.
+> **Username:** ''admin'' ? **Password:** ''chordsheets-demo''
+> [[/start?do=login|Log in as demo admin]] ? [[/start?do=admin&page=config|Open configuration manager]]
+
+
 
 ===== Play it, don't just document it =====
 
@@ -82,6 +88,95 @@ Cmaj7
 Let the next refrain begin
 </chordSheet>
 
+
+===== Feature tour =====
+
+The current release brings the completed wishlist together in one workflow. Every example below is live: use the keyboard as well as the pointer, change a guitar voicing, and copy a clean version into a document when you are done.
+
+==== Inline chords and slash bass ====
+
+Inline chords keep compact lead sheets readable. Slash chords expose their bass note separately for themes and export tools.
+
+<chordSheet 0 title="Night Lines" author="Demo Ensemble">
+[Verse]
+Walk [C] home with the melody above us and the (G/B) bass leading down.
+Keep [Am7] time while the [Fadd9] streetlights fade.
+</chordSheet>
+
+==== Tooltip alignment at both edges ====
+
+The two chords below exercise both viewport edges. Their popovers stay inside
+the browser while each arrow continues to point at its chord text.
+
+<chordSheet 0 title="Tooltip Edge Check">
+[Viewport edges]
+C                                                       G
+</chordSheet>
+
+==== Long chord lines stay intact ====
+
+Bars, repeat annotations, unknown stage notes, slash chords, spacing, and
+trailing text must survive parsing without being merged into neighboring
+chords.
+
+<chordSheet 0 title="Long Line Regression">
+[Mixed chord line]
+C | G/B (2x) ??? | Am7    Fadd9 || Dm7/G  outro
+</chordSheet>
+
+==== Alternative voicings ====
+
+Guitar chords use a compact visual **Fret** picker: **Open** and the fret numbers identify each actual neck position. Switch the selected shape between **Fretboard** and **Tab** without leaving the popover. Add an exact low-E-to-high-e shape such as ''C@{x,3,2,0,1,0}'' to the song source when the voicing is part of the arrangement. The orange **Pin** is the authored shape; alternatives are temporary previews and never rewrite the song.
+
+<chordSheet 0 title="Voicing Lab">
+[Progression]
+C@{x,3,2,0,1,0}        G        Am       F
+</chordSheet>
+
+==== Ukulele and song metadata ====
+
+Set ''instrument="ukulele"'' on the opening tag to switch to four-string GCEA diagrams. Title, author, and date become a structured song header.
+
+<chordSheet 0 instrument="ukulele" title="Four Strings, One Song" author="Chordsheets Demo" date="2026-07-30">
+[Verse]
+C        Am       F        G
+Four strings, the same transposable song syntax.
+</chordSheet>
+
+==== Standalone JTab chord ====
+
+<chordSheet 0>
+%7/2.X/X.7/3.7/4.6/1.X/X[Bm7b5]
+</chordSheet>
+
+The original JTab custom-chord syntax remains supported for existing pages.
+This example renders one explicitly authored ''Bm7b5'' shape.
+
+
+==== Tablature and standard notation ====
+
+Dedicated blocks keep JTab-compatible tablature and locally rendered ABC notation next to the lyrics.
+
+<chordSheet 0 title="Tab and Notation Study" author="Chordsheets Demo">
+[Tablature]
+{{tab}}
+$2 0 1 3 $1 0 3 | 022100
+{{/tab}}
+
+[Notation]
+{{notation}}
+X:1
+M:4/4
+L:1/4
+K:C
+C D E F | G A B c |
+{{/notation}}
+</chordSheet>
+
+==== Configuration ====
+
+Administrators can tune colors, fonts, independent chord and lyric sizes, spacing, section styling, tooltip behavior, metadata export, and the Word export font family in DokuWiki's Configuration Manager.
+
 ===== Write your first sheet =====
 
 Wrap a plain-text song in ''chordSheet'' tags. Put chords on their own lines and use square brackets for section names.
@@ -99,17 +194,20 @@ The next line follows the chords
 </chordSheet>
 </code>
 
-  * ''<chordSheet 0>'' keeps the original key.
-  * ''<chordSheet 2>'' transposes up two semitones; ''-2'' transposes down.
+  * ''&lt;chordSheet 0&gt;'' keeps the original key.
+  * ''&lt;chordSheet 2&gt;'' transposes up two semitones; ''-2'' transposes down.
   * ''[Verse]'', ''[Chorus]'', and other bracketed labels create visible sections.
   * Chord-only lines are recognized automatically and keep their spacing.
+  * Use ''[C]'' or ''(G/B)'' for inline chords inside a lyric line.
+  * Use dedicated ''tab'' and ''notation'' blocks for tablature and standard notation.
+  * Add ''instrument="ukulele"'', ''title'', ''author'', or ''date'' on the opening tag when needed.
 
 ===== Installation =====
 
   - [[https://github.com/apazureck/dokuwiki-chordsheets/archive/refs/heads/master.zip|Download the current project ZIP]].
   - Extract it and rename the extracted directory to exactly ''chordsheets''.
   - Copy that directory to ''lib/plugins/chordsheets/'' inside your DokuWiki installation.
-  - Open any wiki page, add a ''<chordSheet>'' block, and save.
+  - Open any wiki page, add a ''&lt;chordSheet&gt;'' block, and save.
 
 The resulting plugin path must look like this:
 
@@ -125,11 +223,10 @@ lib/
 
 For general extension administration, see the [[https://www.dokuwiki.org/plugins|official DokuWiki plugin documentation]].
 
-===== Project & roadmap =====
+===== Project and support =====
 
   * [[https://github.com/apazureck/dokuwiki-chordsheets|Source code and documentation]]
   * [[https://github.com/apazureck/dokuwiki-chordsheets/issues|Bug reports and feature requests]]
-  * [[https://github.com/apazureck/dokuwiki-chordsheets/issues/7|Roadmap: ukulele chord support]]
   * [[https://www.dokuwiki.org/|About DokuWiki]]
 
 The project is open source under the [[https://github.com/apazureck/dokuwiki-chordsheets/blob/master/LICENSE|GNU General Public License v2.0]].

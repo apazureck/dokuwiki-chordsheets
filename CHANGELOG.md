@@ -6,6 +6,33 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-31
+
+### Added
+
+* Configurable chord-sheet colors, fonts, independent lyric/chord sizes, spacing, section styles, tooltip behavior, and export defaults (#26, #28).
+* Ukulele diagrams, alternate guitar voicings, inline chords, slash-chord semantics, tablature blocks, ABC notation, and optional title/author/date metadata (#7, #24, #25, #29, #30, #31, #32).
+* Stable explicit guitar-voicing pins using six-string fret shapes in chord lines and inline chords.
+
+### Changed
+
+* Tablature, notation, and chord diagrams now stay responsive on narrow screens.
+* Chord-sheet initialization is scoped and idempotent for AJAX page updates.
+* Guitar voicing choices now use a compact accessible fret-position control with an authored-pin state and labels derived from the rendered shape.
+* Guitar voicing popovers now switch the selected shape between a fretboard diagram and tablature.
+
+### Removed
+
+* Browser-specific print/PDF templates and their configuration, so document output can be handled by a dedicated external tool.
+
+### Fixed
+
+* Word export omits tooltip diagrams and can include configured song metadata (#20).
+* Altered and extended chords remain intact during parsing (#21).
+* Long chord lines preserve bars, annotations, unknown tokens, and trailing content (#34).
+* Chord-sheet tags inside code examples remain literal, while tab and notation markers inside a sheet reach the client-side renderer.
+* The invisible hover corridor now keeps chord popovers open while the pointer crosses the visual gap.
+
 ## [0.2.0] - 2026-07-30
 
 ### Added

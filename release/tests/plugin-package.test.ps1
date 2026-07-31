@@ -18,7 +18,7 @@ $builder = Join-Path $repositoryRoot 'release\build-plugin-zip.ps1'
 $temporaryRoot = Join-Path ([System.IO.Path]::GetTempPath()) (
     'chordsheets-plugin-release-' + [guid]::NewGuid().ToString('N')
 )
-$archive = Join-Path $temporaryRoot 'dokuwiki-plugin-chordsheets-0.2.0.zip'
+$archive = Join-Path $temporaryRoot 'dokuwiki-plugin-chordsheets-1.0.0.zip'
 $expanded = Join-Path $temporaryRoot 'expanded'
 
 try {
@@ -26,7 +26,7 @@ try {
 
     New-Item -ItemType Directory -Path $temporaryRoot -Force | Out-Null
     & $builder `
-        -Version '0.2.0' `
+        -Version '1.0.0' `
         -RepositoryRoot $repositoryRoot `
         -OutputArchive $archive
 
@@ -54,6 +54,10 @@ try {
         'chordsheets/THIRD_PARTY_NOTICES.md'
         'chordsheets/conf/default.php'
         'chordsheets/conf/metadata.php'
+        'chordsheets/js/abcjs-basic.min.js'
+        'chordsheets/js/ukulele-chords.js'
+        'chordsheets/lang/en/settings.php'
+        'chordsheets/licenses/abcjs-LICENSE.md'
         'chordsheets/js/jtab.min.js'
         'chordsheets/js/raphael.js'
         'chordsheets/licenses/jtab-LICENSE'
@@ -66,6 +70,7 @@ try {
     foreach ($requiredEntry in $requiredEntries) {
         Assert-True ($normalizedEntries -contains $requiredEntry) "Archive is missing $requiredEntry."
     }
+    Assert-True ($normalizedEntries -notcontains 'chordsheets/print.css') 'Archive still contains the removed print/PDF stylesheet.'
 
     $forbiddenSegments = @(
         '/.git/'
@@ -94,8 +99,8 @@ try {
     ) 'plugin.info.txt does not link to the DokuWiki registry page.'
 
     $changelog = Get-Content -Raw (Join-Path $expanded 'chordsheets\CHANGELOG.md')
-    Assert-True ($changelog -match '(?m)^## \[0\.2\.0\] - \d{4}-\d{2}-\d{2}\r?$') (
-        'CHANGELOG.md has no 0.2.0 release section.'
+    Assert-True ($changelog -match '(?m)^## \[1\.0\.0\] - 2026-07-31\r?$') (
+        'CHANGELOG.md has no 1.0.0 release section dated 2026-07-31.'
     )
 } finally {
     if (Test-Path -LiteralPath $temporaryRoot) {

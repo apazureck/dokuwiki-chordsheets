@@ -30,9 +30,10 @@ jobs:
         run: |
           php -l syntax.php
           php ./_test/syntax-postconnect.test.php
+          php ./_test/syntax-config-metadata.test.php
 
       - name: Run JavaScript unit tests
-        run: node --test ./_test/script.test.js
+        run: node --test ./_test/*.test.js
 
       - name: Run release policy and package tests
         shell: pwsh

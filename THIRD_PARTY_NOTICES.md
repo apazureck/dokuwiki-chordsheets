@@ -16,6 +16,15 @@ This DokuWiki plugin bundles the following third-party JavaScript libraries:
 - Copyright: Dmitry Baranovskiy and Raphaël contributors
 - License: MIT
 
+## abcjs
+
+- Bundled file: `js/abcjs-basic.min.js`
+- Project: [abcjs](https://github.com/paulrosen/abcjs)
+- Version: 6.6.4
+- Copyright: Paul Rosen and abcjs contributors
+- License: MIT
+- License text: `licenses/abcjs-LICENSE.md`
+
 These components remain governed by their respective licenses. The plugin itself
 is distributed under the GNU General Public License version 2 or later; see
 `LICENSE`.

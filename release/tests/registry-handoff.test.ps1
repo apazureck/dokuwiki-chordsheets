@@ -27,16 +27,16 @@ if (-not (Test-Path -LiteralPath $documentationPath -PathType Leaf)) {
 $template = Get-Content -Raw $templatePath
 $documentation = Get-Content -Raw $documentationPath
 
-Assert-Match $template '(?m)^lastupdate\s*:\s*2026-07-30\r?$' (
+Assert-Match $template '(?m)^lastupdate\s*:\s*2026-07-31\r?$' (
     'Registry handoff date must match plugin.info.txt.'
 )
 Assert-Match $template '(?m)^compatible\s*:\s*Librarian,\s*Mort\r?$' (
-    'Registry handoff must record the DokuWiki releases verified for v0.2.0.'
+    'Registry handoff must record the DokuWiki releases verified for v1.0.0.'
 )
 Assert-Match $template (
     'downloadurl\s*:\s*https://github\.com/apazureck/dokuwiki-chordsheets/' +
-    'releases/download/v0\.2\.0/dokuwiki-plugin-chordsheets-0\.2\.0\.zip'
-) 'Registry handoff must use the immutable v0.2.0 release asset.'
+    'releases/download/v1\.0\.0/dokuwiki-plugin-chordsheets-1\.0\.0\.zip'
+) 'Registry handoff must use the immutable v1.0.0 release asset.'
 Assert-Match $template '(?m)^bugtracker\s*:\s*https://github\.com/apazureck/dokuwiki-chordsheets/issues\r?$' (
     'Registry handoff must link to the issue tracker.'
 )

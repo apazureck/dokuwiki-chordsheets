@@ -1,3 +1,14 @@
+.chordsheets-color-picker {
+    background: transparent;
+    border: 1px solid #a9a9a9;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    height: 2rem;
+    margin-inline-end: 0.5rem;
+    padding: 0.125rem;
+    vertical-align: middle;
+    width: 2.75rem;
+}
 .song-with-chords {
     background-color: transparent;
     font-family: 'Courier New', Courier, monospace;
@@ -85,7 +96,7 @@
     content: "";
     position: absolute;
     top: 100%;
-    left: 50%;
+    left: var(--cs-tooltip-arrow-left, 50%);
     margin-left: -5px;
     border-width: 5px;
     border-style: solid;
@@ -171,8 +182,8 @@ span.jtab svg {
 
 .cSheetButtonBar {
   display: flex;
-  justify-content: flex-end;
-  margin: 0.5rem 0;
+  justify-content: flex-start;
+  margin: 0.25rem 0 0.5rem;
   text-align: initial;
 }
 
@@ -207,7 +218,9 @@ span.jtab svg {
   box-shadow: 0 0.75rem 2rem rgba(34, 43, 38, 0.18);
   left: 0;
   margin-left: 0;
-  min-width: 8.5rem;
+  box-sizing: border-box;
+  max-width: calc(100vw - 1rem);
+  width: 18rem;
   padding: 0.55rem;
   pointer-events: none;
   position: fixed;
@@ -216,6 +229,31 @@ span.jtab svg {
   z-index: 10000;
 }
 
+
+/* Invisible bridge keeps the fixed popover hoverable while crossing its gap. */
+.tooltip .tooltiptext::before {
+  background: transparent;
+  content: "";
+  height: 1.25rem;
+  left: 0;
+  pointer-events: auto;
+  position: absolute;
+  right: 0;
+}
+
+.tooltip .tooltiptext[data-placement="top"]::before {
+  top: 100%;
+}
+
+.tooltip .tooltiptext[data-placement="bottom"]::before {
+  bottom: 100%;
+}
+
+.tooltip:hover .tooltiptext,
+.tooltip:focus .tooltiptext,
+.tooltip:focus-within .tooltiptext {
+  pointer-events: auto;
+}
 .tooltip .tooltiptext[data-placement="bottom"]::after {
   border-color: transparent transparent #555;
   bottom: 100%;
@@ -223,7 +261,8 @@ span.jtab svg {
 }
 
 .tooltip:hover .tooltiptext,
-.tooltip:focus .tooltiptext {
+.tooltip:focus .tooltiptext,
+.tooltip:focus-within .tooltiptext {
   opacity: 1;
   visibility: visible;
 }
@@ -465,7 +504,6 @@ span.jtab svg {
   }
 
   .song-with-chords {
-    font-size: 0.88rem;
     padding: 0.9rem;
   }
 }
@@ -473,5 +511,330 @@ span.jtab svg {
 @media (prefers-reduced-motion: reduce) {
   .cSheetButtons button {
     transition: none;
+  }
+}
+/* Configurable chord-sheet presentation and document exports. */
+.song-with-chords {
+  --cs-chord-color: #c94f2d;
+  --cs-lyric-color: #26312b;
+  --cs-font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --cs-lyrics-font-size: 1rem;
+  --cs-chords-font-size: 1rem;
+  --cs-line-spacing: 1.7;
+  --cs-section-color: #405347;
+  --cs-section-background: #fff2d7;
+  --cs-section-spacing: 1.25rem;
+  --cs-export-font-family: Georgia, "Times New Roman", serif;
+  color: var(--cs-lyric-color);
+  font-family: var(--cs-font-family);
+  line-height: var(--cs-line-spacing);
+}
+
+.song-chord {
+  color: var(--cs-chord-color);
+}
+
+.song-chord-bass {
+  display: inline;
+}
+
+.song-bass-note {
+  font-size: 0.85em;
+  font-variant-position: sub;
+}
+
+.song-chordLine {
+  color: var(--cs-chord-color);
+  font-family: var(--cs-font-family);
+  font-size: var(--cs-chords-font-size);
+  line-height: var(--cs-line-spacing);
+  margin: 0;
+  white-space: pre;
+}
+
+.song-textLine {
+  color: var(--cs-lyric-color);
+  font-family: var(--cs-font-family);
+  font-size: var(--cs-lyrics-font-size);
+  line-height: var(--cs-line-spacing);
+  margin: 0;
+  white-space: pre;
+}
+
+.song-section {
+  margin-top: var(--cs-section-spacing);
+}
+
+.song-section-heading {
+  color: var(--cs-section-color);
+}
+
+.song-with-chords[data-section-style="accented"] .song-section.chorus,
+.song-with-chords[data-section-style="accented"] .song-section.refrain {
+  background: var(--cs-section-background);
+}
+
+.song-with-chords[data-section-style="plain"] .song-section {
+  background: transparent;
+  border-left: 0;
+  padding-left: 0;
+}
+.chord-sheet-export,
+.chord-sheet-export .song-chordLine,
+.chord-sheet-export .song-textLine,
+.chord-sheet-export .song-section-heading,
+.chord-sheet-export .song-title,
+.chord-sheet-export .song-author,
+.chord-sheet-export .song-date {
+  font-family: var(--cs-export-font-family);
+}
+
+
+.song-metadata {
+  border-bottom: 1px solid #ddd5c2;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+}
+
+.song-title {
+  color: var(--cs-lyric-color);
+  font-family: var(--cs-font-family);
+  margin: 0;
+}
+
+.song-author,
+.song-date {
+  display: inline-block;
+  margin: 0.25rem 0.75rem 0 0;
+}
+
+.song-diagram,
+.jtab-ukulele,
+.song-annotation {
+  color: var(--cs-lyric-color);
+}
+
+.song-chordLine .song-chord-text,
+.song-chordLine .song-annotation {
+  color: var(--cs-lyric-color);
+}
+
+.song-custom-chord,
+.song-tab,
+.song-staff {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.song-custom-chord svg,
+.song-staff svg,
+.song-tab svg,
+.song-diagram svg,
+.jtab-ukulele svg {
+  height: auto;
+  max-width: 100%;
+}
+
+.song-notation-error,
+.chord-sheet-tab-error {
+  background: #fff2d7;
+  border-left: 0.25rem solid #c94f2d;
+  padding: 0.75rem;
+}
+
+.voicing-header {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.voicing-chord-name {
+  color: #28372f;
+  font: 800 1rem/1.2 system-ui, sans-serif;
+}
+
+.voicing-controls {
+  align-items: center;
+  display: inline-flex;
+  font: 700 0.72rem/1 system-ui, sans-serif;
+  gap: 0.35rem;
+  pointer-events: auto;
+}
+
+.voicing-label {
+  color: #607067;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.voicing-options {
+  background: #f4efdf;
+  border: 1px solid #d8cfba;
+  border-radius: 999px;
+  display: inline-flex;
+  overflow: hidden;
+  padding: 0.12rem;
+}
+
+.voicing-option {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: #405347;
+  cursor: pointer;
+  font: 800 0.72rem/1 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  min-height: 1.65rem;
+  min-width: 1.65rem;
+  padding: 0.3rem 0.42rem;
+  white-space: nowrap;
+}
+
+.voicing-option:hover {
+  background: #e5ddca;
+  color: #28372f;
+}
+
+.voicing-option[aria-pressed="true"] {
+  background: #315d3c;
+  color: #fffdf6;
+}
+
+.voicing-option.is-pinned[aria-pressed="true"] {
+  background: #c94f2d;
+  padding-inline: 0.58rem;
+}
+
+.voicing-option:focus-visible {
+  outline: 3px solid #196f78;
+  outline-offset: 2px;
+}
+
+.voicing-diagram-layout {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.voicing-view-controls {
+  align-items: stretch;
+  background: #f4efdf;
+  border: 1px solid #d8cfba;
+  border-radius: 0.55rem;
+  display: inline-flex;
+  flex-direction: column;
+  margin: 0;
+  overflow: hidden;
+  padding: 0.12rem;
+  pointer-events: auto;
+}
+
+.voicing-view-option {
+  appearance: none;
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0.4rem;
+  display: inline-flex;
+  color: #405347;
+  cursor: pointer;
+  justify-content: center;
+  min-height: 2.25rem;
+  min-width: 2.25rem;
+  padding: 0.4rem;
+  position: relative;
+}
+
+.voicing-view-option:hover {
+  background: #e5ddca;
+  color: #28372f;
+}
+
+.voicing-view-option[aria-pressed="true"] {
+  background: #315d3c;
+  color: #fffdf6;
+}
+
+.voicing-view-option:focus-visible {
+  outline: 3px solid #196f78;
+  outline-offset: 2px;
+  position: relative;
+  z-index: 1;
+}
+
+.voicing-view-icon {
+  display: block;
+  fill: currentColor;
+  height: 1.55rem;
+  stroke: none;
+  width: 1.55rem;
+}
+
+.voicing-view-icon .tab-label {
+  fill: currentColor;
+  font-family: Arial, sans-serif;
+  font-size: 5.2px;
+  font-weight: 800;
+  stroke: none;
+  text-anchor: middle;
+}
+
+.voicing-view-icon .tab-string-line,
+.voicing-view-icon .tab-marker {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+.voicing-view-icon .tab-marker {
+  stroke-width: 2.1;
+}
+
+.song-diagram {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+}
+
+.song-diagram.is-fretboard {
+  height: 118px;
+}
+
+.voicing-diagram-layout .song-diagram {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+}
+
+
+.jtab-ukulele.song-diagram.is-fretboard {
+  height: 124px;
+}
+
+.song-diagram.is-tab {
+  height: 100px;
+}
+
+.song-diagram.is-fretboard svg,
+.song-diagram.is-tab svg {
+  display: block;
+  margin-inline: auto;
+}
+
+.tooltip .tooltiptext {
+  pointer-events: auto;
+  text-align: left;
+}
+
+@media (max-width: 30rem) {
+  .voicing-header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

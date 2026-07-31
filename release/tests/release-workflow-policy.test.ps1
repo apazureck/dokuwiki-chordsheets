@@ -60,6 +60,12 @@ Assert-Match $releaseWorkflow 'persist-credentials:\s*false' (
 Assert-Match $releaseWorkflow 'environment:\s*\r?\n\s*name:\s*dokuwiki-registry' (
     'DokuWiki handoff must use its own protected environment.'
 )
+Assert-Match $releaseWorkflow 'php \./_test/syntax-config-metadata\.test\.php' (
+    'Release workflow must run configuration and escaping regressions before publishing.'
+)
+Assert-Match $releaseWorkflow 'node --test \./_test/\*\.test\.js' (
+    'Release workflow must run the complete JavaScript regression suite before publishing.'
+)
 Assert-Match $releaseWorkflow 'release/build-plugin-zip\.ps1' (
     'Release workflow must use the verified plugin builder.'
 )
@@ -80,7 +86,7 @@ Assert-Match $ciWorkflow 'pull_request:' 'Plugin CI must run for pull requests.'
 Assert-Match $ciWorkflow 'permissions:\s*\r?\n\s*contents:\s*read' (
     'Plugin CI must be read-only.'
 )
-Assert-Match $ciWorkflow 'node --test \./_test/script\.test\.js' (
+Assert-Match $ciWorkflow 'node --test \./_test/\*\.test\.js' (
     'Plugin CI must run JavaScript unit tests.'
 )
 Assert-Match $ciWorkflow 'php \./_test/syntax-postconnect\.test\.php' (
