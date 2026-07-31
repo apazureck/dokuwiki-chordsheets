@@ -53,7 +53,7 @@ try {
     }
 
     $rawPage = Invoke-WebRequest -Uri "$baseUrl/doku.php?id=start&do=export_raw" -UseBasicParsing
-    if ($rawPage.Content -notmatch [regex]::Escape('<chordSheet 2>')) {
+    if ($rawPage.Content -notmatch '<chordSheet 2[^>]*\bsource="tabs"') {
         throw 'The transposition example is missing from the start page.'
     }
 

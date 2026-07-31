@@ -66,6 +66,11 @@ expose validated state through `data-transpose`, `data-instrument`,
 `data-tooltips`, `data-tooltip-behavior`, `data-section-style`,
 and `data-export-metadata` for themes and export tools.
 
+Add `source="tabs"` to an opening tag when an example should let readers
+switch between the rendered **Ansicht** and its copyable DokuWiki **Source**.
+This is opt-in, so existing chord sheets keep their current output without
+additional controls.
+
 ## Inline chords, tablature, and notation
 
 Slash chords such as `G/B` also expose the bass through `data-bass-note` and

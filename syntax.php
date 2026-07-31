@@ -27,6 +27,7 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
         'export_include_metadata' => 1,
         'export_font_family' => 'Georgia, "Times New Roman", serif',
     );
+    private $sourceCapture = null;
 
     public function getType() { return 'formatting'; }
     public function getAllowedTypes() { return array(); }
@@ -62,13 +63,19 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
 
     private function parseOptions($tag)
     {
-        $options = array('transpose' => 0, 'instrument' => 'guitar', 'metadata' => array());
+        $options = array(
+            'transpose' => 0,
+            'instrument' => 'guitar',
+            'metadata' => array(),
+            'source_tabs' => false,
+            'source_tag' => (string) $tag,
+        );
         $body = preg_replace('/^<chordSheet|>$/i', '', (string) $tag);
         if (preg_match('/(?:^|\\s)([-+]?\\d+)(?=\\s|$)/', $body, $match)) {
             $options['transpose'] = (int) $match[1];
         }
 
-        preg_match_all('/\\b(transpose|instrument|title|author|date)\\s*=\\s*(["\'])(.*?)\\2/is', $body, $attributes, PREG_SET_ORDER);
+        preg_match_all('/\\b(transpose|instrument|title|author|date|source)\\s*=\\s*(["\'])(.*?)\\2/is', $body, $attributes, PREG_SET_ORDER);
         foreach ($attributes as $attribute) {
             $name = strtolower($attribute[1]);
             $value = $this->normalizeAttribute($attribute[3]);
@@ -78,6 +85,8 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
                 if (in_array(strtolower($value), array('guitar', 'ukulele'), true)) {
                     $options['instrument'] = strtolower($value);
                 }
+            } elseif ($name === 'source' && strtolower($value) === 'tabs') {
+                $options['source_tabs'] = true;
             } elseif ($name === 'date') {
                 if ($this->isValidDate($value)) {
                     $options['metadata']['date'] = $this->escape($value);
@@ -116,15 +125,24 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
         list($state, $match) = $data;
         switch ($state) {
             case DOKU_LEXER_ENTER:
+                $this->sourceCapture = !empty($match['source_tabs'])
+                    ? array('source' => $match['source_tag'], 'id' => null)
+                    : null;
                 $this->renderStart($renderer, $match);
                 break;
             case DOKU_LEXER_UNMATCHED:
+                if ($this->sourceCapture !== null) {
+                    $this->sourceCapture['source'] .= $match;
+                }
                 $renderer->doc .= $renderer->_xmlEntities($match);
                 break;
             case DOKU_LEXER_EXIT:
-                $renderer->doc .= '</div></article>';
+                $this->renderEnd($renderer);
                 break;
             case DOKU_LEXER_MATCHED:
+                if ($this->sourceCapture !== null) {
+                    $this->sourceCapture['source'] .= $match;
+                }
                 $renderer->doc .= '<span class="jtab">' . $renderer->_xmlEntities($match) . '</span>';
                 break;
         }
@@ -161,10 +179,36 @@ class syntax_plugin_chordsheets extends DokuWiki_Syntax_Plugin
         $style = $this->styleProperties($settings);
         $attributes[] = 'style="' . $style . '"';
         $bodyAttributes[] = 'style="' . $style . '"';
+        if ($this->sourceCapture !== null) {
+            $exampleId = 'chord-sheet-example-' . $id;
+            $this->sourceCapture['id'] = $exampleId;
+            $renderer->doc .= '<div class="chord-sheet-example">';
+            $renderer->doc .= '<div class="chord-sheet-example-tabs" role="tablist" aria-label="Beispielansicht" hidden>';
+            $renderer->doc .= '<button type="button" class="chord-sheet-example-tab" role="tab" id="' . $exampleId . '-view-tab" aria-controls="' . $exampleId . '-view-panel" aria-selected="true" tabindex="0">Ansicht</button>';
+            $renderer->doc .= '<button type="button" class="chord-sheet-example-tab" role="tab" id="' . $exampleId . '-source-tab" aria-controls="' . $exampleId . '-source-panel" aria-selected="false" tabindex="-1">Source</button>';
+            $renderer->doc .= '</div>';
+            $renderer->doc .= '<div class="chord-sheet-example-panel chord-sheet-example-view" role="tabpanel" id="' . $exampleId . '-view-panel" aria-labelledby="' . $exampleId . '-view-tab">';
+        }
         $renderer->doc .= '<article ' . implode(' ', $attributes) . '>';
         $this->renderMetadata($renderer, $metadata);
         $renderer->doc .= '<div class="cSheetButtonBar"><span class="cSheetButtons"><button type="button" class="cSheetExportButton" onclick="cSheetExportToWord(' . $id . ')" aria-label="Copy this chord sheet for use in a document">Copy for Word</button></span></div>';
         $renderer->doc .= '<div ' . implode(' ', $bodyAttributes) . '>';
+    }
+
+    private function renderEnd(Doku_Renderer $renderer)
+    {
+        $renderer->doc .= '</div></article>';
+        if ($this->sourceCapture === null) {
+            return;
+        }
+
+        $exampleId = $this->sourceCapture['id'];
+        $source = $this->sourceCapture['source'] . '</chordSheet>';
+        $renderer->doc .= '</div>';
+        $renderer->doc .= '<div class="chord-sheet-example-panel chord-sheet-example-source" role="tabpanel" id="' . $exampleId . '-source-panel" aria-labelledby="' . $exampleId . '-source-tab" hidden>';
+        $renderer->doc .= '<pre tabindex="0" aria-label="DokuWiki-Quelltext"><code>' . $renderer->_xmlEntities($source) . '</code></pre>';
+        $renderer->doc .= '</div></div>';
+        $this->sourceCapture = null;
     }
 
     private function renderMetadata(Doku_Renderer $renderer, $metadata)
