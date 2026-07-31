@@ -1,6 +1,6 @@
 @{
-    Version = '0.2.0'
-    ReleaseDate = '2026-07-30'
+    Version = '1.0.0'
+    ReleaseDate = '2026-07-31'
     PluginRoot = 'chordsheets'
     Compatible = @(
         'Librarian'
@@ -11,6 +11,7 @@
         'img'
         'js'
         'licenses'
+        'lang'
         'CHANGELOG.md'
         'LICENSE'
         'README.md'

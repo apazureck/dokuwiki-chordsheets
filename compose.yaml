@@ -10,6 +10,9 @@ services:
       - |
         mkdir -p /storage/conf /storage/data/pages /storage/data/media/wiki /storage/lib/plugins
         cp /seed/local.php /storage/conf/local.php
+        rm -f /storage/lib/plugins/chordsheets/print.css
+        cp /seed/users.auth.php /storage/conf/users.auth.php
+        cp /seed/acl.auth.php /storage/conf/acl.auth.php
         cp /demo-seed/start.txt /storage/data/pages/start.txt
         cp /plugin-images/chordsheets-logo.png /storage/data/media/wiki/logo.png
         chown -R 1000:1000 /storage
@@ -54,6 +57,10 @@ services:
       - type: bind
         source: ./js
         target: /storage/lib/plugins/chordsheets/js
+        read_only: true
+      - type: bind
+        source: ./lang
+        target: /storage/lib/plugins/chordsheets/lang
         read_only: true
       - type: bind
         source: ./plugin.info.txt

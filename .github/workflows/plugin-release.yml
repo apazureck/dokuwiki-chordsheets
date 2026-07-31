@@ -45,7 +45,8 @@ jobs:
         run: |
           php -l ./syntax.php
           php ./_test/syntax-postconnect.test.php
-          node --test ./_test/script.test.js
+          php ./_test/syntax-config-metadata.test.php
+          node --test ./_test/*.test.js
           ./release/tests/registry-handoff.test.ps1
           ./release/tests/release-workflow-policy.test.ps1
 

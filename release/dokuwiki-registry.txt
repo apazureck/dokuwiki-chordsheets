@@ -3,10 +3,10 @@ description: Pretty and interactive chord sheets for DokuWiki
 author: Andreas Pazureck
 email: andreas@pazureck.de
 type: syntax
-lastupdate: 2026-07-30
+lastupdate: 2026-07-31
 compatible: Librarian, Mort
 tags: music, chords, guitar, ukulele, songs
-downloadurl: https://github.com/apazureck/dokuwiki-chordsheets/releases/download/v0.2.0/dokuwiki-plugin-chordsheets-0.2.0.zip
+downloadurl: https://github.com/apazureck/dokuwiki-chordsheets/releases/download/v1.0.0/dokuwiki-plugin-chordsheets-1.0.0.zip
 bugtracker: https://github.com/apazureck/dokuwiki-chordsheets/issues
 sourcerepo: https://github.com/apazureck/dokuwiki-chordsheets
 demo: https://chordsheets.pazureck.de/
