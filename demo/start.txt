@@ -30,7 +30,7 @@ These short examples use original demo lyrics. Try the highlighted chords and co
 
 ==== Example 1 — A simple campfire progression ====
 
-<chordSheet 0>
+<chordSheet 0 source="tabs">
 [Intro]
 Am    F     C     G
 
@@ -57,7 +57,7 @@ Chords are waiting between the lines
 
 The number in the opening tag is the transposition in semitones. Negative numbers transpose down.
 
-<chordSheet 2>
+<chordSheet 2 source="tabs">
 [Intro]
 Am    F     C     G
 
@@ -74,7 +74,7 @@ No manual rewriting or regret
 
 ==== Example 3 — Extended and slash chords ====
 
-<chordSheet 0>
+<chordSheet 0 source="tabs">
 [Verse]
 Cmaj7        G/B
 Leave a little room to breathe
@@ -97,7 +97,7 @@ The current release brings the completed wishlist together in one workflow. Ever
 
 Inline chords keep compact lead sheets readable. Slash chords expose their bass note separately for themes and export tools.
 
-<chordSheet 0 title="Night Lines" author="Demo Ensemble">
+<chordSheet 0 source="tabs" title="Night Lines" author="Demo Ensemble">
 [Verse]
 Walk [C] home with the melody above us and the (G/B) bass leading down.
 Keep [Am7] time while the [Fadd9] streetlights fade.
@@ -108,7 +108,7 @@ Keep [Am7] time while the [Fadd9] streetlights fade.
 The two chords below exercise both viewport edges. Their popovers stay inside
 the browser while each arrow continues to point at its chord text.
 
-<chordSheet 0 title="Tooltip Edge Check">
+<chordSheet 0 source="tabs" title="Tooltip Edge Check">
 [Viewport edges]
 C                                                       G
 </chordSheet>
@@ -119,7 +119,7 @@ Bars, repeat annotations, unknown stage notes, slash chords, spacing, and
 trailing text must survive parsing without being merged into neighboring
 chords.
 
-<chordSheet 0 title="Long Line Regression">
+<chordSheet 0 source="tabs" title="Long Line Regression">
 [Mixed chord line]
 C | G/B (2x) ??? | Am7    Fadd9 || Dm7/G  outro
 </chordSheet>
@@ -128,24 +128,49 @@ C | G/B (2x) ??? | Am7    Fadd9 || Dm7/G  outro
 
 Guitar chords use a compact visual **Fret** picker: **Open** and the fret numbers identify each actual neck position. Switch the selected shape between **Fretboard** and **Tab** without leaving the popover. Add an exact low-E-to-high-e shape such as ''C@{x,3,2,0,1,0}'' to the song source when the voicing is part of the arrangement. The orange **Pin** is the authored shape; alternatives are temporary previews and never rewrite the song.
 
-<chordSheet 0 title="Voicing Lab">
+<chordSheet 0 source="tabs" title="Voicing Lab">
 [Progression]
 C@{x,3,2,0,1,0}        G        Am       F
 </chordSheet>
 
 ==== Ukulele and song metadata ====
 
-Set ''instrument="ukulele"'' on the opening tag to switch to four-string GCEA diagrams. Title, author, and date become a structured song header.
+Without an instrument attribute, the plugin uses six-string guitar diagrams.
+Add only ''instrument="ukulele"'' to the opening tag to switch the same song
+to four-string GCEA diagrams.
 
-<chordSheet 0 instrument="ukulele" title="Four Strings, One Song" author="Chordsheets Demo" date="2026-07-30">
-[Verse]
+Copy this HTML-style example into a DokuWiki page:
+
+<code html>
+<chordSheet 0 source="tabs" instrument="ukulele">
+[Progression]
 C        Am       F        G
-Four strings, the same transposable song syntax.
 </chordSheet>
+</code>
+
+The two live examples below use exactly the same progression:
+
+**Guitar (default):**
+
+<chordSheet 0 source="tabs" title="Same Song, Guitar">
+[Progression]
+C        Am       F        G
+Six strings are used when no instrument is specified.
+</chordSheet>
+
+**Ukulele (GCEA):**
+
+<chordSheet 0 source="tabs" instrument="ukulele" title="Same Song, Ukulele" author="Chordsheets Demo" date="2026-07-31">
+[Progression]
+C        Am       F        G
+The added instrument attribute switches the diagrams to four strings.
+</chordSheet>
+
+Optional ''title'', ''author'', and ''date'' attributes create a structured song header.
 
 ==== Standalone JTab chord ====
 
-<chordSheet 0>
+<chordSheet 0 source="tabs">
 %7/2.X/X.7/3.7/4.6/1.X/X[Bm7b5]
 </chordSheet>
 
@@ -157,7 +182,7 @@ This example renders one explicitly authored ''Bm7b5'' shape.
 
 Dedicated blocks keep JTab-compatible tablature and locally rendered ABC notation next to the lyrics.
 
-<chordSheet 0 title="Tab and Notation Study" author="Chordsheets Demo">
+<chordSheet 0 source="tabs" title="Tab and Notation Study" author="Chordsheets Demo">
 [Tablature]
 {{tab}}
 $2 0 1 3 $1 0 3 | 022100
@@ -182,7 +207,7 @@ Administrators can tune colors, fonts, independent chord and lyric sizes, spacin
 Wrap a plain-text song in ''chordSheet'' tags. Put chords on their own lines and use square brackets for section names.
 
 <code xml>
-<chordSheet 0>
+<chordSheet 0 source="tabs">
 [Intro]
 Am    F     C     G
 

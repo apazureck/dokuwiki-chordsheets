@@ -891,10 +891,114 @@ function runSongHighlighter(scope) {
     return initializedCount;
 }
 
+function findChordSheetSourcePanel(tablist, panelId, ownerDocument) {
+    "use strict";
+    var wrapper = tablist.closest ? tablist.closest(".chord-sheet-example") : null;
+    var panels;
+    var i;
+
+    if (wrapper) {
+        panels = wrapper.querySelectorAll('[role="tabpanel"]');
+        for (i = 0; i < panels.length; i++) {
+            if (panels[i].id === panelId) return panels[i];
+        }
+        return null;
+    }
+    return ownerDocument.getElementById ? ownerDocument.getElementById(panelId) : null;
+}
+
+function selectChordSheetSourceTab(tablist, selectedTab, moveFocus) {
+    "use strict";
+    var tabs = tablist.querySelectorAll('[role="tab"]');
+    var ownerDocument = selectedTab.ownerDocument || document;
+    var panel;
+    var selected;
+    var i;
+
+    for (i = 0; i < tabs.length; i++) {
+        selected = tabs[i] === selectedTab;
+        tabs[i].setAttribute("aria-selected", selected ? "true" : "false");
+        tabs[i].setAttribute("tabindex", selected ? "0" : "-1");
+        panel = findChordSheetSourcePanel(tablist, tabs[i].getAttribute("aria-controls"), ownerDocument);
+        if (panel) panel.hidden = !selected;
+    }
+    if (moveFocus && selectedTab.focus) selectedTab.focus();
+}
+
+function handleChordSheetSourceTabClick(event) {
+    "use strict";
+    selectChordSheetSourceTab(this, event.currentTarget, false);
+}
+
+function handleChordSheetSourceTabKeydown(event) {
+    "use strict";
+    var tablist = this;
+    var tabs = tablist.querySelectorAll('[role="tab"]');
+    var currentIndex = -1;
+    var nextIndex;
+    var i;
+
+    for (i = 0; i < tabs.length; i++) {
+        if (tabs[i] === event.currentTarget) currentIndex = i;
+    }
+    if (currentIndex < 0) return;
+
+    if (event.key === "ArrowRight") {
+        nextIndex = (currentIndex + 1) % tabs.length;
+    } else if (event.key === "ArrowLeft") {
+        nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    } else if (event.key === "Home") {
+        nextIndex = 0;
+    } else if (event.key === "End") {
+        nextIndex = tabs.length - 1;
+    } else {
+        return;
+    }
+
+    event.preventDefault();
+    selectChordSheetSourceTab(tablist, tabs[nextIndex], true);
+}
+
+function initializeChordSheetSourceTabs(scope) {
+    "use strict";
+    var tablists = getScopedElements(scope, ".chord-sheet-example-tabs");
+    var initializedCount = 0;
+    var tabs;
+    var selectedTab;
+    var i;
+    var j;
+
+    for (i = 0; i < tablists.length; i++) {
+        tabs = tablists[i].querySelectorAll('[role="tab"]');
+        if (tabs.length < 2) continue;
+        if (tablists[i]._chordSheetSourceTabsBound) {
+            selectedTab = null;
+            for (j = 0; j < tabs.length; j++) {
+                if (tabs[j].getAttribute("aria-selected") === "true") {
+                    selectedTab = tabs[j];
+                }
+            }
+            selectChordSheetSourceTab(tablists[i], selectedTab || tabs[0], false);
+            tablists[i].hidden = false;
+            continue;
+        }
+        for (j = 0; j < tabs.length; j++) {
+            tabs[j].addEventListener("click", handleChordSheetSourceTabClick.bind(tablists[i]));
+            tabs[j].addEventListener("keydown", handleChordSheetSourceTabKeydown.bind(tablists[i]));
+        }
+        tablists[i].hidden = false;
+        tablists[i]._chordSheetSourceTabsBound = true;
+        initializedCount++;
+    }
+    return initializedCount;
+}
+
 function initializeChordSheets(scope) {
     "use strict";
     var root = scope || document;
-    if (runSongHighlighter(root) < 1) return;
+    var renderedSongs = runSongHighlighter(root);
+    initializeChordSheetSourceTabs(root);
+    if (renderedSongs < 1) return;
     if (typeof jtab !== "undefined" && jtab.renderimplicit) jtab.renderimplicit(root);
     if (typeof ukulele !== "undefined" && ukulele.renderimplicit) ukulele.renderimplicit(root);
     renderNotationBlocks(root);
@@ -909,9 +1013,42 @@ function initializeUpdatedChordSheets(event) {
     initializeChordSheetColorSettings(root);
 }
 
+function restoreChordSheetHashTarget() {
+    "use strict";
+    var hash;
+    var targetId;
+    var target;
+
+    if (typeof window === "undefined" || !window.location) return false;
+    if (getScopedElements(document, ".chord-sheet-example-tabs").length < 1) return false;
+    hash = window.location.hash || "";
+    if (hash.charAt(0) !== "#" || hash.length < 2) return false;
+    try {
+        targetId = decodeURIComponent(hash.slice(1));
+    } catch (error) {
+        return false;
+    }
+    target = document.getElementById ? document.getElementById(targetId) : null;
+    if (!target || !target.scrollIntoView) return false;
+    target.scrollIntoView({ block: "start" });
+    return true;
+}
+
+function initializeRestoredChordSheetPage(event) {
+    "use strict";
+    if (!event || !event.persisted) return false;
+    ready();
+    restoreChordSheetHashTarget();
+    return true;
+}
+
 function registerDokuWikiContentInitializer() {
     "use strict";
     document.addEventListener("dw_page_loaded", initializeUpdatedChordSheets);
+    if (typeof window !== "undefined" && window.addEventListener) {
+        window.addEventListener("pageshow", initializeRestoredChordSheetPage);
+        window.addEventListener("load", restoreChordSheetHashTarget);
+    }
     if (typeof window !== "undefined" && window.jQuery) {
         window.jQuery(document).on("dw_page_content.chordsheets", function (event, data) {
             var content = data && data.$content;

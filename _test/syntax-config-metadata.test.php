@@ -79,6 +79,47 @@ try {
     csAssertSame(array(), $plugin->getAllowedTypes(), 'Chord-sheet content must remain raw and must not activate nested wiki syntax.');
     csAssertSame('block', $plugin->getPType(), 'Chord sheets emit block-level article markup.');
 
+    $sourceTabs = $plugin->handle(
+        '<chordSheet 0 source="tabs" title="Source example">',
+        DOKU_LEXER_ENTER,
+        0,
+        $handler
+    );
+    csAssertSame(true, $sourceTabs[1]['source_tabs'], 'Source tabs must be opt-in through source="tabs".');
+    $invalidSourceTabs = $plugin->handle(
+        '<chordSheet 0 source="tabs-and-script">',
+        DOKU_LEXER_ENTER,
+        0,
+        $handler
+    );
+    csAssertSame(false, $invalidSourceTabs[1]['source_tabs'], 'Unknown source modes must not enable controls.');
+
+    $sourceRenderer = new Doku_Renderer();
+    $plugin->render('xhtml', $sourceRenderer, $sourceTabs);
+    $plugin->render('xhtml', $sourceRenderer, array(DOKU_LEXER_UNMATCHED, "[Verse]\nC & <unsafe>"));
+    $plugin->render('xhtml', $sourceRenderer, array(DOKU_LEXER_MATCHED, '%0/1.2/2.2/3.1/1.0/0.0/0[C]'));
+    $plugin->render('xhtml', $sourceRenderer, array(DOKU_LEXER_EXIT, ''));
+    csAssertContains('role="tablist"', $sourceRenderer->doc, 'Opt-in examples must render an accessible tab list.');
+    csAssertContains('role="tab"', $sourceRenderer->doc, 'View choices must use tab semantics.');
+    csAssertContains('aria-selected="true"', $sourceRenderer->doc, 'The rendered view must be selected initially.');
+    csAssertContains('role="tabpanel"', $sourceRenderer->doc, 'Both example views must use tab-panel semantics.');
+    csAssertContains('>Ansicht</button>', $sourceRenderer->doc, 'The rendered example tab must be clearly labelled.');
+    csAssertContains('>Source</button>', $sourceRenderer->doc, 'The source example tab must be clearly labelled.');
+    csAssertContains(
+        '&lt;chordSheet 0 source=&quot;tabs&quot; title=&quot;Source example&quot;&gt;',
+        $sourceRenderer->doc,
+        'The opening DokuWiki tag must be displayed as escaped source.'
+    );
+    csAssertContains('C &amp; &lt;unsafe&gt;', $sourceRenderer->doc, 'Source text must be escaped against HTML injection.');
+    csAssertContains('&lt;/chordSheet&gt;', $sourceRenderer->doc, 'The closing DokuWiki tag must be included in source.');
+    csAssertContains('%0/1.2/2.2/3.1/1.0/0.0/0[C]', $sourceRenderer->doc, 'Matched JTab source must remain copyable.');
+
+    $plainRenderer = new Doku_Renderer();
+    $plugin->render('xhtml', $plainRenderer, $legacy);
+    $plugin->render('xhtml', $plainRenderer, array(DOKU_LEXER_UNMATCHED, 'C'));
+    $plugin->render('xhtml', $plainRenderer, array(DOKU_LEXER_EXIT, ''));
+    csAssertNotContains('role="tablist"', $plainRenderer->doc, 'Existing chord sheets must stay unchanged by default.');
+
     $valid = $plugin->handle(
         '<chordSheet -2 title="Rock &amp; Roll" author="A &quot;B&quot;" date="2026-07-30">',
         DOKU_LEXER_ENTER,

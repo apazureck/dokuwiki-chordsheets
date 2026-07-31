@@ -1304,6 +1304,152 @@ function createScope(songs, chords = []) {
     };
 }
 
+function createSourceTabsFixture() {
+    const listeners = Object.create(null);
+    const panels = {
+        "example-view-panel": { hidden: false, id: "example-view-panel" },
+        "example-source-panel": { hidden: true, id: "example-source-panel" }
+    };
+    const foreignPanels = {
+        "example-view-panel": { hidden: false, id: "example-view-panel" },
+        "example-source-panel": { hidden: true, id: "example-source-panel" }
+    };
+    const document = {
+        addEventListener() {},
+        getElementById(id) {
+            return foreignPanels[id] || null;
+        }
+    };
+    const makeTab = (name, panelId, selected) => {
+        const attributes = {
+            "aria-controls": panelId,
+            "aria-selected": selected ? "true" : "false",
+            tabindex: selected ? "0" : "-1"
+        };
+        return {
+            ownerDocument: document,
+            focused: false,
+            addEventListener(type, listener) {
+                listeners[name + ":" + type] = listener;
+            },
+            getAttribute(attributeName) {
+                return attributes[attributeName];
+            },
+            setAttribute(attributeName, value) {
+                attributes[attributeName] = String(value);
+            },
+            focus() {
+                this.focused = true;
+            }
+        };
+    };
+    const viewTab = makeTab("view", "example-view-panel", true);
+    const sourceTab = makeTab("source", "example-source-panel", false);
+    const wrapper = {
+        querySelectorAll(selector) {
+            return selector === '[role="tabpanel"]' ? Object.values(panels) : [];
+        }
+    };
+    const tablist = {
+        closest(selector) {
+            return selector === ".chord-sheet-example" ? wrapper : null;
+        },
+        querySelectorAll(selector) {
+            return selector === '[role="tab"]' ? [viewTab, sourceTab] : [];
+        }
+    };
+    const root = {
+        querySelectorAll(selector) {
+            return selector === ".chord-sheet-example-tabs" ? [tablist] : [];
+        }
+    };
+    return { document, foreignPanels, listeners, panels, root, sourceTab, tablist, viewTab };
+}
+
+test("switches demo source tabs by click and keyboard without duplicate bindings", () => {
+    const fixture = createSourceTabsFixture();
+    const context = loadScript({ document: fixture.document });
+
+    assert.equal(context.initializeChordSheetSourceTabs(fixture.root), 1);
+    fixture.panels["example-view-panel"].hidden = true;
+    fixture.panels["example-source-panel"].hidden = false;
+    assert.equal(context.initializeChordSheetSourceTabs(fixture.root), 0);
+    assert.equal(fixture.panels["example-view-panel"].hidden, false);
+    assert.equal(fixture.panels["example-source-panel"].hidden, true);
+
+    fixture.listeners["source:click"]({ currentTarget: fixture.sourceTab });
+    assert.equal(fixture.sourceTab.getAttribute("aria-selected"), "true");
+    assert.equal(fixture.viewTab.getAttribute("aria-selected"), "false");
+    assert.equal(fixture.panels["example-source-panel"].hidden, false);
+    assert.equal(fixture.panels["example-view-panel"].hidden, true);
+
+    assert.equal(fixture.foreignPanels["example-source-panel"].hidden, true);
+    assert.equal(fixture.foreignPanels["example-view-panel"].hidden, false);
+    let prevented = false;
+    fixture.listeners["source:keydown"]({
+        currentTarget: fixture.sourceTab,
+        key: "ArrowLeft",
+        preventDefault() {
+            prevented = true;
+        }
+    });
+    assert.equal(prevented, true);
+    assert.equal(fixture.viewTab.focused, true);
+    assert.equal(fixture.viewTab.getAttribute("aria-selected"), "true");
+    assert.equal(fixture.panels["example-view-panel"].hidden, false);
+});
+
+test("re-applies demo fragment navigation after late page layout", () => {
+    const scrollCalls = [];
+    const target = {
+        scrollIntoView(options) {
+            scrollCalls.push(options);
+        }
+    };
+    const document = {
+        addEventListener() {},
+        getElementById(id) {
+            return id === "inline_chords_and_slash_bass" ? target : null;
+        },
+        querySelectorAll(selector) {
+            return selector === ".chord-sheet-example-tabs" ? [{}] : [];
+        }
+    };
+    const window = {
+        location: { hash: "#inline_chords_and_slash_bass" },
+        addEventListener() {}
+    };
+    const context = loadScript({ document, window });
+
+    assert.equal(context.restoreChordSheetHashTarget(), true);
+    assert.equal(scrollCalls.length, 1);
+    assert.equal(scrollCalls[0].block, "start");
+});
+
+test("only reinitializes and restores fragments for persisted pageshow events", () => {
+    const context = loadScript({
+        document: { addEventListener() {} },
+        window: { addEventListener() {} }
+    });
+    let readyCalls = 0;
+    let restoreCalls = 0;
+    context.ready = () => {
+        readyCalls += 1;
+    };
+    context.restoreChordSheetHashTarget = () => {
+        restoreCalls += 1;
+        return true;
+    };
+
+    assert.equal(context.initializeRestoredChordSheetPage({ persisted: false }), false);
+    assert.equal(readyCalls, 0);
+    assert.equal(restoreCalls, 0);
+
+    assert.equal(context.initializeRestoredChordSheetPage({ persisted: true }), true);
+    assert.equal(readyCalls, 1);
+    assert.equal(restoreCalls, 1);
+});
+
 test("initializes initial and AJAX-replaced sheets idempotently without duplicate listeners", () => {
     const documentListeners = Object.create(null);
     const windowListenerCounts = Object.create(null);
@@ -1335,6 +1481,8 @@ test("initializes initial and AJAX-replaced sheets idempotently without duplicat
 
     assert.equal(typeof documentListeners.DOMContentLoaded, "function");
     assert.equal(typeof documentListeners.dw_page_loaded, "function");
+    assert.equal(windowListenerCounts.pageshow, 1);
+    assert.equal(windowListenerCounts.load, 1);
 
     documentListeners.DOMContentLoaded();
     const initiallyRendered = firstSong.innerHTML;

@@ -9,6 +9,84 @@
     vertical-align: middle;
     width: 2.75rem;
 }
+.chord-sheet-example {
+  background: #fffdf6;
+  border: 1px solid #d8cfba;
+  border-radius: 0.9rem;
+  box-shadow: 0 0.35rem 1rem rgba(40, 55, 47, 0.08);
+  margin-block: 1rem 1.5rem;
+  padding: clamp(0.55rem, 1.5vw, 0.9rem);
+}
+
+.chord-sheet-example-tabs {
+  align-items: flex-end;
+  background: #f4efdf;
+  border: 1px solid #d8cfba;
+  border-radius: 0.65rem;
+  display: flex;
+  gap: 0.25rem;
+  margin: 0 0 0.65rem;
+  max-width: 100%;
+  padding: 0.2rem;
+  width: fit-content;
+}
+
+.chord-sheet-example-tabs[hidden],
+.chord-sheet-example-panel[hidden] {
+  display: none;
+}
+
+.chord-sheet-example-tab {
+  appearance: none;
+  background: #f4efdf;
+  border: 2px solid transparent;
+  border-radius: 0.45rem;
+  color: #405347;
+  cursor: pointer;
+  font: 750 0.9rem/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  min-height: 2.75rem;
+  min-width: 5.5rem;
+  padding: 0.7rem 1rem;
+}
+
+.chord-sheet-example-tab:hover {
+  background: #e5ddca;
+  color: #28372f;
+}
+
+.chord-sheet-example-tab[aria-selected="true"] {
+  background: #28372f;
+  border-color: #28372f;
+  box-shadow: 0 0.2rem 0 #ee6736;
+  color: #fffdf6;
+  font-weight: 800;
+}
+
+.chord-sheet-example-tab:focus-visible {
+  outline: 3px solid #196f78;
+  outline-offset: 3px;
+  position: relative;
+  z-index: 1;
+}
+
+.chord-sheet-example-source pre {
+  background: #202923;
+  border: 1px solid #405347;
+  border-radius: 0.75rem;
+  color: #fffdf6;
+  margin: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  white-space: pre;
+}
+
+.chord-sheet-example-source code {
+  background: transparent;
+  color: inherit;
+  font: 0.9rem/1.55 ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  padding: 0;
+}
 .song-with-chords {
     background-color: transparent;
     font-family: 'Courier New', Courier, monospace;

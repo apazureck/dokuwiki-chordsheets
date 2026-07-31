@@ -55,7 +55,7 @@ test("declares and consumes the public chord-sheet CSS custom properties", () =>
 test("keeps the native settings color picker rule self-contained", () => {
     assert.match(
         css,
-        /\.chordsheets-color-picker\s*\{[^}]*width:\s*2\.75rem;\s*\}\s*\.song-with-chords\s*\{/s
+        /\.chordsheets-color-picker\s*\{[^}]*width:\s*2\.75rem;\s*\}/s
     );
 });
 
@@ -135,6 +135,7 @@ test("documents supported syntax and configuration", () => {
         'author="',
         'date="',
         'instrument="ukulele"',
+        'source="tabs"',
         '{{tab}}',
         '--cs-chord-color',
         '@{x,3,2,0,1,0}'
@@ -151,6 +152,29 @@ test("documents supported syntax and configuration", () => {
     assert.match(demo, /instrument="ukulele"/);
     assert.match(demo, /\{\{tab\}\}/);
     assert.match(demo, /C@\{x,3,2,0,1,0\}/);
+});
+
+test("gives every live demo chord sheet an accessible view and source switch", () => {
+    const openingTags = liveDemo.match(/<chordSheet\b[^>]*>/gi) || [];
+    assert.ok(openingTags.length > 0, "Demo must contain live chord-sheet examples");
+    for (const openingTag of openingTags) {
+        assert.match(openingTag, /\bsource="tabs"/i, "Missing source tabs on " + openingTag);
+    }
+    assert.match(css, /\.chord-sheet-example-tabs\s*\{[\s\S]*?display:\s*flex/);
+    assert.match(css, /\.chord-sheet-example-tab\[aria-selected=["']true["']\]/);
+    assert.match(css, /\.chord-sheet-example-tab:focus-visible/);
+    assert.match(css, /\.chord-sheet-example-source\s+pre\s*\{[\s\S]*?overflow-x:\s*auto/);
+});
+
+test("visually scopes each source switch to one chord sheet card", () => {
+    const cardRule = css.match(/\.chord-sheet-example\s*\{([^}]*)\}/)?.[1] || "";
+    const tabsRule = css.match(/\.chord-sheet-example-tabs\s*\{([^}]*)\}/)?.[1] || "";
+
+    assert.match(cardRule, /border:\s*1px solid/);
+    assert.match(cardRule, /border-radius:/);
+    assert.match(cardRule, /background:/);
+    assert.match(tabsRule, /width:\s*fit-content/);
+    assert.doesNotMatch(tabsRule, /border-bottom:/);
 });
 
 test("keeps inline syntax examples from opening a live chord-sheet block", () => {
@@ -175,10 +199,30 @@ test("presents the completed wishlist as an interactive demo tour", () => {
     assert.match(liveDemo, /\{\{notation\}\}/);
 });
 
+test("shows how to switch the same progression from guitar to ukulele", () => {
+    assert.match(
+        demo,
+        /<code html>\s*<chordSheet 0[^>]*instrument="ukulele"[^>]*>\s*\[Progression\]\s*C\s+Am\s+F\s+G\s*<\/chordSheet>\s*<\/code>/
+    );
+    const sectionMatch = liveDemo.match(
+        /==== Ukulele and song metadata ====[\s\S]*?==== Standalone JTab chord ====/
+    );
+    assert.ok(sectionMatch, "Demo must contain the ukulele switch section");
+
+    const section = sectionMatch[0];
+    const openingTags = section.match(/<chordSheet 0[^>]*>/g) || [];
+    assert.equal(openingTags.length, 2);
+    assert.doesNotMatch(openingTags[0], /instrument=/);
+    assert.match(openingTags[1], /instrument="ukulele"/);
+    assert.match(openingTags[1], /author="[^"]+"/);
+    assert.match(openingTags[1], /date="\d{4}-\d{2}-\d{2}"/);
+    assert.equal((section.match(/C\s+Am\s+F\s+G/g) || []).length, 2);
+});
+
 test("includes a live standalone legacy JTab chord", () => {
     assert.match(
         liveDemo,
-        /==== Standalone JTab chord ====\s*<chordSheet 0>\s*%7\/2\.X\/X\.7\/3\.7\/4\.6\/1\.X\/X\[Bm7b5\]\s*<\/chordSheet>\s*The original JTab custom-chord syntax[\s\S]*?==== Tablature and standard notation ====/
+        /==== Standalone JTab chord ====\s*<chordSheet 0[^>]*>\s*%7\/2\.X\/X\.7\/3\.7\/4\.6\/1\.X\/X\[Bm7b5\]\s*<\/chordSheet>\s*The original JTab custom-chord syntax[\s\S]*?==== Tablature and standard notation ====/
     );
 });
 

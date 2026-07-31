@@ -25,13 +25,13 @@ foreach ($requiredPagePattern in @(
     '====== DokuWiki Chordsheets ======',
     '===== Live demo =====',
     '===== Installation =====',
-    '===== Project & roadmap =====',
+    '===== Project and support =====',
     '\{\{:wiki:logo\.png\?220\|DokuWiki Chordsheets logo\}\}',
-    '<chordSheet 0>',
-    '<chordSheet 2>',
+    '<chordSheet 0[^>]*\bsource="tabs"',
+    '<chordSheet 2[^>]*\bsource="tabs"',
     'Cmaj7',
     'https://github\.com/apazureck/dokuwiki-chordsheets',
-    'https://github\.com/apazureck/dokuwiki-chordsheets/issues/7',
+    'https://github\.com/apazureck/dokuwiki-chordsheets/issues',
     'archive/refs/heads/master\.zip',
     '<code xml>'
 )) {
